@@ -6,15 +6,14 @@ import argparse
 import torchvision
 import numpy as np
 import torch.nn as nn
-from torch.autograd import Variable
-from data_utils import load_candidates
+from DataLoader import CDATA
+from data_utils import load_candidates, load_dialog_task, vectorize_candidates
 
 class chatBot(object):
     def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False, memory_size=50, random_state=None, batch_size=32, learning_rate=0.001, epsilon=1e-8, max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20):
         self.data_dir = data_dir
         self.task_id = task_id
         self.model_dir = model_dir
-        # self.isTrain=isTrain
         self.isInteractive = isInteractive
         self.OOV = OOV
         self.memory_size = memory_size
@@ -28,8 +27,44 @@ class chatBot(object):
         self.epochs = epochs
         self.embedding_size = embedding_size
 
-        candidates, self.candid2indx = load_candidates(self.data_dir, self.task_id)
-        print candidates
+        dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size, train=0, batch_size=self.batch_size) #0->train, 1->validate, 2->test
+        data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True)
+        # self.model = MemN2NDialog(self.batch_size, dataset.getParam('vocab_size'), dataset.getParam('n_cand'), dataset.getParam('sentence_size'), self.embedding_size, dataset.getParam('candidates_vec'),
+        #                         hops=self.hops, max_grad_norm=self.max_grad_norm, task_id=task_id)
+
+        # criterion = nn.CrossEntropyLoss()
+        # optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+
+
+    
+    def build_vocab(self, data, candidates):
+        vocab = reduce(lambda x, y: x | y, (set(
+            list(chain.from_iterable(s)) + q) for s, q, a in data))
+        vocab |= reduce(lambda x, y: x | y, (set(candidate)
+                                             for candidate in candidates))
+        vocab = sorted(vocab)
+        self.word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
+        max_story_size = max(map(len, (s for s, _, _ in data)))
+        mean_story_size = int(np.mean([len(s) for s, _, _ in data]))
+        self.sentence_size = max(
+            map(len, chain.from_iterable(s for s, _, _ in data)))
+        self.candidate_sentence_size = max(map(len, candidates))
+        query_size = max(map(len, (q for _, q, _ in data)))
+        self.memory_size = min(self.memory_size, max_story_size)
+        self.vocab_size = len(self.word_idx) + 1  # +1 for nil word
+        self.sentence_size = max(
+            query_size, self.sentence_size)  # for the position
+        # params
+        print("vocab size:", self.vocab_size)
+        print("Longest sentence length", self.sentence_size)
+        print("Longest candidate sentence length",
+              self.candidate_sentence_size)
+        print("Longest story length", max_story_size)
+        print("Average story length", mean_story_size)
+
+
+
+
 
 
 def main(params):
