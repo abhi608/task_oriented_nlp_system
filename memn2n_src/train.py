@@ -47,7 +47,7 @@ class chatBot(object):
                 s = trainS[start:end]
                 q = trainQ[start:end]
                 a = trainA[start:end]
-                # print "S: ", s
+                print "S: ", s
                 # self.model.batch_train(s, q, a)
 
     def build_vocab(self, data, candidates):

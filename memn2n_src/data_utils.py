@@ -149,9 +149,9 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
 
         lq = max(0, sentence_size - len(query))
         q = [word_idx[w] if w in word_idx else 0 for w in query] + [0] * lq
-        S.append(np.array(ss))
-        Q.append(np.array(q))
-        A.append(np.array(answer))
+        S.append(ss)
+        Q.append(q)
+        A.append(answer)
     return S, Q, A
 
 
