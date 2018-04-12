@@ -1,1 +1,4 @@
 ./Frames-dataset
+./memn2n_src/data/
+./memn2n_src/task*
+*.pyc
