@@ -7,8 +7,8 @@ dtype = torch.FloatTensor
 class MemN2NDialog(object):
     """End-To-End Memory Network."""
 
-    def __init__(self, batch_size, vocab_size, sentence_size, embedding_size,
-                 candidates_vec, hops=3, learning_rate=1e-6, max_grad_norm=40.0, task_id=1):
+    def __init__(self, batch_size, vocab_size, sentence_size, embedding_size=20,
+                 hops=3, learning_rate=1e-6, max_grad_norm=40.0):
 
         # Constants
         self._batch_size = batch_size
