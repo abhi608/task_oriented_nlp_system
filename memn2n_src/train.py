@@ -7,6 +7,7 @@ import torchvision
 import numpy as np
 import torch.nn as nn
 from DataLoader import CDATA
+from main_model import MemN2NDialog
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
 
 class chatBot(object):
@@ -27,16 +28,28 @@ class chatBot(object):
         self.epochs = epochs
         self.embedding_size = embedding_size
 
-        dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size, train=0, batch_size=self.batch_size) #0->train, 1->validate, 2->test
-        data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=self.batch_size, shuffle=True)
-        # self.model = MemN2NDialog(self.batch_size, dataset.getParam('vocab_size'), dataset.getParam('n_cand'), dataset.getParam('sentence_size'), self.embedding_size, dataset.getParam('candidates_vec'),
-        #                         hops=self.hops, max_grad_norm=self.max_grad_norm, task_id=task_id)
-
+        self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size, train=0, batch_size=self.batch_size) #0->train, 1->validate, 2->test
+        self.model = MemN2NDialog(self.batch_size, self.train_dataset.getParam('vocab_size'), self.train_dataset.getParam('sentence_size'), self.embedding_size, self.train_dataset.getParam('candidates_vec'),
+                                hops=self.hops, learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
         # criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
+    def train(self):
+        trainS, trainQ, trainA = self.train_dataset.getData()
+        assert len(trainS) == len(trainQ) and len(trainQ) == len(trainA)
+        n_train = len(trainS)
+        batches = zip(range(0, n_train - self.batch_size, self.batch_size), range(self.batch_size, n_train, self.batch_size))
+        batches = [(start, end) for start, end in batches]
 
-    
+        for epoch in range(self.epochs):
+            np.random.shuffle(batches)
+            for start, end in batches:
+                s = trainS[start:end]
+                q = trainQ[start:end]
+                a = trainA[start:end]
+                # print "S: ", s
+                # self.model.batch_train(s, q, a)
+
     def build_vocab(self, data, candidates):
         vocab = reduce(lambda x, y: x | y, (set(
             list(chain.from_iterable(s)) + q) for s, q, a in data))
@@ -63,20 +76,15 @@ class chatBot(object):
         print("Average story length", mean_story_size)
 
 
-
-
-
-
 def main(params):
     model_dir = "task" + str(params['task_id']) + "_" + params['model_dir']
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     chatbot = chatBot(data_dir=params['data_dir'], model_dir=model_dir, task_id=params['task_id'], isInteractive=params['interactive'], OOV=params['OOV'], memory_size=params['memory_size'], random_state=params['random_state'], batch_size=params['batch_size'], learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'])
-    # if params['train']:
-    #     chatbot.train()
+    if params['train']:
+        chatbot.train()
     # else:
     #     chatbot.test()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

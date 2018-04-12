@@ -3,7 +3,7 @@ import numpy as np
 from itertools import chain
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates, vectorize_data
 
-class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
+class CDATA(object):
     def __init__(self, data_dir, task_id, OOV=False, memory_size=50, train=0, batch_size=32):
     	self.data_dir = data_dir
     	self.task_id = task_id
@@ -20,15 +20,15 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
         self.build_vocab(data, candidates)
         self.candidates_vec = vectorize_candidates(candidates, self.word_idx, self.candidate_sentence_size)
         self.params = {
-        		'n_cand': self.n_cand,
-        		'indx2candid': self.indx2candid,
-        		'candid2indx': self.candid2indx,
-        		'candidates_vec': self.candidates_vec,
-        		'word_idx': self.word_idx,
-        		'sentence_size': self.sentence_size,
-        		'candidate_sentence_size': self.candidate_sentence_size,
-        		'vocab_size': self.vocab_size 
-        	}
+    		'n_cand': self.n_cand,
+    		'indx2candid': self.indx2candid,
+    		'candid2indx': self.candid2indx,
+    		'candidates_vec': self.candidates_vec,
+    		'word_idx': self.word_idx,
+    		'sentence_size': self.sentence_size,
+    		'candidate_sentence_size': self.candidate_sentence_size,
+    		'vocab_size': self.vocab_size
+    	}
 
         if self.train == 0:
         	self.S, self.Q, self.A = vectorize_data(self.trainData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
@@ -36,17 +36,9 @@ class CDATA(torch.utils.data.Dataset): # Extend PyTorch's Dataset class
         	self.S, self.Q, self.A = vectorize_data(self.valData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
         elif self.train == 2:
         	self.S, self.Q, self.A = vectorize_data(self.testData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
-        # print self.S[0].shape, self.Q.shape, self.A.shape
-        # for i in range(self.S.shape[0]):
-        # 	print self.S[i]
-        # print len(self.S[0])
 
-    def __len__(self):
-    	assert self.S.shape[0] == self.Q.shape[0] and self.S.shape[0] == self.A.shape[0]
-    	return self.S.shape[0]
-
-    def __getitem__(self, idx):
-    	return torch.FloatTensor(self.S[idx]), torch.FloatTensor(self.Q[idx]), torch.FloatTensor(self.A[idx])
+    def getData(self):
+	   return self.S, self.Q, self.A
 
     def getParam(self, parameter):
     	return self.params[parameter]
