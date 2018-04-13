@@ -49,13 +49,16 @@ class chatBot(object):
         batches = [(start, end) for start, end in batches]
 
         for epoch in range(self.epochs):
+            print('Started epoch ', epoch)
             np.random.shuffle(batches)
+            loss = 0.0
             for start, end in batches:
                 s = trainS[start:end]
                 q = trainQ[start:end]
                 a = trainA[start:end]
                 # print("S: ", a[0].data.shape)
-                self.model.batch_train(s, q, a)
+                loss += self.model.batch_train(s, q, a)
+            print('Loss after {0}: {1}'.format(epoch, loss/n_train))
 
     def build_vocab(self, data, candidates):
         vocab = reduce(lambda x, y: x | y, (set(

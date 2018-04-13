@@ -20,6 +20,7 @@ class MemN2NDialog(object):
         self._max_grad_norm = max_grad_norm
         self._learn_rate = learning_rate
         self._candidate_size = candidate_size
+        self.candidates = candidates_vec
 
         # Weight matrices
         self.A = Var(torch.randn(self._sentence_size,
@@ -29,14 +30,15 @@ class MemN2NDialog(object):
         self.H = Var(torch.randn(self._embedding_size,
                                  self._embedding_size).type(dtype), requires_grad=True)
         self.W = Var(torch.randn(self._embedding_size,
-                                 self._candidate_size).type(dtype), requires_grad=True)
+                                 self.candidates.shape[0]).type(dtype), requires_grad=True)
 
         # Functions
         self.softmax = torch.nn.Softmax(dim=0)
 
     def single_pass(self, stories, queries):
         # Initialize predictions
-        a_pred = Var(torch.randn(self._batch_size).type(dtype), requires_grad=False)
+        # a_pred = Var(torch.randn(self._candidate_size).type(dtype), requires_grad=False)
+        a_pred = []
 
         # Iterate over batch_size
         for b in range(self._batch_size):
@@ -62,33 +64,28 @@ class MemN2NDialog(object):
                     o += prob * c[i]                  # generate embedded output
 
                 # Update next input
-                u = o + u.matmul(self.H)
+                u = torch.nn.functional.normalize(o + u.matmul(self.H), dim=0)
 
             # Get prediction
-            # print (torch.mul(u, self.W))
-            # print "/////////////////////////////////////////"
-            print("predict: ", u.matmul(self.W))
-            a_pred[b] = self.softmax(u.matmul(self.W))
-            # tmp = self.softmax(torch.mul(u, self.W))
-            # print tmp
-            # a_pred[b] = tmp
+            # print(self.softmax(u.matmul(self.W)))
+            a_pred.append(self.softmax(u.matmul(self.W)))
 
         return a_pred
 
     def batch_train(self, stories, queries, answers):
-        # print queries[0].data.shape
         a_pred = self.single_pass(stories, queries)
-        # print(answers)
-        # answers = Var(dtype(answers), requires_grad=False)
-        # print a_pred.data.shape
-        loss = -answers.bmm(torch.log(a_pred))  
-        # print "loss: ", loss.data
-        # print a_pred
-        # print "-----------------------"
+
+        loss = -answers[0].dot(torch.log(a_pred[0]))
+
+        for b in range(1, self._batch_size):
+            loss += -answers[b].dot(torch.log(a_pred[b]))
+        # print("loss: ", loss.data)
 
         # Backprop and update weights
         loss.backward()
         self.update_weights()
+
+        return float(loss.data)
 
     def batch_test(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
