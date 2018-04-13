@@ -56,18 +56,14 @@ class MemN2NDialog(object):
                 o = Var(torch.zeros(self._embedding_size).type(dtype), requires_grad=False)
 
                 # Iterate over m_i to get p_i
-                # print('\nNumber of sentences: ', m.shape[0])
                 for i in range(int(m.data.shape[0])):
                     prob = self.softmax(u.dot(m[i]))  # probability of each possible output
-                    # print('Probability shape: ', prob.shape)
-                    # print('c shape: ', c[i].shape)
                     o += prob * c[i]                  # generate embedded output
 
                 # Update next input
                 u = torch.nn.functional.normalize(o + u.matmul(self.H), dim=0)
 
             # Get prediction
-            # print(self.softmax(u.matmul(self.W)))
             a_pred.append(self.softmax(u.matmul(self.W)))
 
         return a_pred
