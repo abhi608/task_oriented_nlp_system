@@ -71,7 +71,7 @@ class MemN2NDialog(object):
         a_pred = self.single_pass(stories, queries)
         # print(answers)
         # answers = Var(dtype(answers), requires_grad=False)
-
+        print a_pred.data.shape
         loss = -answers.dot(torch.log(a_pred))
 
         # Backprop and update weights

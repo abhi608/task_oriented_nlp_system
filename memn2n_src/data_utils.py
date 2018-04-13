@@ -156,5 +156,5 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         q = [word_idx[w] if w in word_idx else 0 for w in query] + [0] * lq
         S.append(Var(torch.FloatTensor(ss)))
         Q.append(Var(torch.FloatTensor(q)))
-        A.append(Var(torch.FloatTensor(answer)))
-    return S, Q, A
+        A.append(answer)
+    return S, Q, Var(torch.FloatTensor(A))
