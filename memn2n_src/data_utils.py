@@ -4,6 +4,7 @@ import os
 import re
 import torch
 import numpy as np
+from torch.autograd import Variable as Var
 
 stop_words=set(["a","an","the"])
 
@@ -149,9 +150,9 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
 
         lq = max(0, sentence_size - len(query))
         q = [word_idx[w] if w in word_idx else 0 for w in query] + [0] * lq
-        S.append(torch.FloatTensor(ss))
-        Q.append(torch.FloatTensor(q))
-        A.append(torch.FloatTensor(answer))
+        S.append(Var(torch.FloatTensor(ss)))
+        Q.append(Var(torch.FloatTensor(q)))
+        A.append(Var(torch.FloatTensor(answer)))
     return S, Q, A
 
 

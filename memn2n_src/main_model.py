@@ -48,7 +48,7 @@ class MemN2NDialog(object):
                 o = torch.zeros(self._sentence_size)  # Embedded output
 
                 # Iterate over m_i to get p_i
-                for i in m.shape[0]:
+                for i in range(int(m.data.shape[0])):
                     prob = self.softmax(u.dot(m[i]))  # probability of each possible output
                     o += prob * c[i]
 
