@@ -28,7 +28,7 @@ class MemN2NDialog(object):
         self.H = Var(torch.randn(self._embedding_size,
                                  self._embedding_size).type(dtype), requires_grad=True)
         self.W = Var(torch.randn(self._embedding_size,
-                                 self._vocab_size).type(dtype), requires_grad=True)
+                                 self._candidate_size).type(dtype), requires_grad=True)
 
         # Functions
         self.softmax = torch.nn.Softmax(dim=0)
@@ -80,7 +80,7 @@ class MemN2NDialog(object):
         # print(answers)
         # answers = Var(dtype(answers), requires_grad=False)
         # print a_pred.data.shape
-        loss = -answers.bmm(torch.log(a_pred))
+        loss = -answers.bmm(torch.log(a_pred))  
         # print "loss: ", loss.data
         # print a_pred
         # print "-----------------------"
