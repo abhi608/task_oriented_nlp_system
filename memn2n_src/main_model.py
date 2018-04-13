@@ -7,8 +7,8 @@ dtype = torch.FloatTensor
 class MemN2NDialog(object):
     """End-To-End Memory Network."""
 
-    def __init__(self, batch_size, vocab_size, candidate_size, sentence_size, embedding_size=20,
-                 candidates_vec, hops=3, learning_rate=1e-6, max_grad_norm=40.0, task_id=1):
+    def __init__(self, batch_size, vocab_size, candidate_size, sentence_size, candidates_vec,
+                embedding_size=20, hops=3, learning_rate=1e-6, max_grad_norm=40.0, task_id=1):
 
         # Constants
         self._batch_size = batch_size
@@ -37,7 +37,7 @@ class MemN2NDialog(object):
         a_pred = Var(torch.randn(self._batch_size).type(dtype), requires_grad=False)
 
         # Iterate over batch_size
-        for b in self._batch_size:
+        for b in range(self._batch_size):
             # Get Embeddings
             u = queries[b].matmul(self.A)  # query embeddings
             m = stories[b].matmul(self.A)  # memory vectors
