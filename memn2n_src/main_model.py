@@ -7,8 +7,8 @@ dtype = torch.FloatTensor
 class MemN2NDialog(object):
     """End-To-End Memory Network."""
 
-    def __init__(self, batch_size, vocab_size, sentence_size, embedding_size=20,
-                 hops=3, learning_rate=1e-6, max_grad_norm=40.0):
+    def __init__(self, batch_size, vocab_size, candidate_size, sentence_size, embedding_size=20,
+                 candidates_vec, hops=3, learning_rate=1e-6, max_grad_norm=40.0, task_id=1):
 
         # Constants
         self._batch_size = batch_size
@@ -33,37 +33,30 @@ class MemN2NDialog(object):
         self.softmax = torch.nn.Softmax()
 
     def single_pass(self, stories, queries):
-        # Get Embeddings
-        u = queries.matmul(self.A)  # query embeddings
-        m = stories.matmul(self.A)  # memory vectors
-        c = stories.matmul(self.C)  # possible outputs
-
-        # Initialize output that will be generated
-        o = Var(torch.randn(self._batch_size,
-                            self._sentence_size).type(dtype), requires_grad=False)
-
-        # Iterate over batch_size, through Memory Network
-        for i in self._batch_size:
-            story = m[i]
-            u_temp = u[i]
-            exp_out = c[i]
-
-            for _ in range(self._hops):
-                net_out = torch.zeros(self._sentence_size)
-
-                # Iterate over x_i to get p_i
-                for j in story.shape[0]:
-                    sentence = story[j]
-                    probs = self.softmax(u_temp.dot(sentence))
-                    net_out += probs * exp_out[j]
-
-                u_temp = net_out + u_temp
-                o.data[i] = net_out
-
-        # Get prediction
+        # Initialize predictions
         a_pred = Var(torch.randn(self._batch_size).type(dtype), requires_grad=False)
-        for i in self._batch_size:
-            a_pred.data[i] = self.softmax(self.W.dot(u[i] + o.data[i]))
+
+        # Iterate over batch_size
+        for b in self._batch_size:
+            # Get Embeddings
+            u = queries[b].matmul(self.A)  # query embeddings
+            m = stories[b].matmul(self.A)  # memory vectors
+            c = stories[b].matmul(self.C)  # possible outputs
+
+            # Pass through Memory Network
+            for _ in range(self._hops):
+                o = torch.zeros(self._sentence_size)  # Embedded output
+
+                # Iterate over m_i to get p_i
+                for i in m.shape[0]:
+                    prob = self.softmax(u.dot(m[i]))  # probability of each possible output
+                    o += prob * c[i]
+
+                # Update next input
+                u = o + u.mm(self.H)
+
+            # Get prediction
+            a_pred.data[b] = self.softmax(u.dot(self.W))
 
         return a_pred
 
