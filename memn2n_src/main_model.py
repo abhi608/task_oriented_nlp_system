@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torch.autograd import Variable as Var
 
 dtype = torch.FloatTensor
@@ -63,16 +64,25 @@ class MemN2NDialog(object):
                 u = o + u.matmul(self.H)
 
             # Get prediction
-            a_pred[b] = self.softmax(u.dot(self.W))
+            # print (torch.mul(u, self.W))
+            # print "/////////////////////////////////////////"
+            # a_pred[b] = self.softmax(u.dot(self.W))
+            tmp = self.softmax(torch.mul(u, self.W))
+            print tmp
+            a_pred[b] = tmp
 
         return a_pred
 
     def batch_train(self, stories, queries, answers):
+        # print queries[0].data.shape
         a_pred = self.single_pass(stories, queries)
         # print(answers)
         # answers = Var(dtype(answers), requires_grad=False)
-        print a_pred.data.shape
+        # print a_pred.data.shape
         loss = -answers.dot(torch.log(a_pred))
+        print "loss: ", loss.data
+        # print a_pred
+        print "-----------------------"
 
         # Backprop and update weights
         loss.backward()
@@ -81,7 +91,7 @@ class MemN2NDialog(object):
     def batch_test(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
 
-        loss = -(answers * torch.log(a_pred)).sum()
+        loss = -(answers * torch.log(a_pred)).sum()        
 
         return a_pred, loss
 
