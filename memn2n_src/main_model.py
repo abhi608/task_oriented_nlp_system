@@ -19,6 +19,7 @@ class MemN2NDialog(object):
         self._hops = hops
         self._max_grad_norm = max_grad_norm
         self._learn_rate = learning_rate
+        self._candidate_size = candidate_size
 
         # Weight matrices
         self.A = Var(torch.randn(self._sentence_size,

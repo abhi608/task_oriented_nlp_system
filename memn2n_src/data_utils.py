@@ -158,5 +158,5 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         Q.append(Var(torch.FloatTensor(q)))
         answer_to_send = np.zeros((candidates_size), dtype=int)
         answer_to_send[answer] = 1
-        A.append(answer_to_send)
-    return S, Q, Var(torch.FloatTensor(A))
+        A.append(Var(torch.FloatTensor(answer_to_send)))
+    return S, Q, A
