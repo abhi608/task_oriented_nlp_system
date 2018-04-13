@@ -30,7 +30,7 @@ class MemN2NDialog(object):
             dtype), requires_grad=True)
 
         # Functions
-        self.softmax = torch.nn.Softmax()
+        self.softmax = torch.nn.Softmax(dim=0)
 
     def single_pass(self, stories, queries):
         # Initialize predictions
@@ -39,30 +39,38 @@ class MemN2NDialog(object):
         # Iterate over batch_size
         for b in range(self._batch_size):
             # Get Embeddings
+            # print('query size: ', queries[b].shape)
             u = queries[b].matmul(self.A)  # query embeddings
+            # print('Shape of u: ', u.shape)
             m = stories[b].matmul(self.A)  # memory vectors
+            # print('Shape of m: ', m.shape)
             c = stories[b].matmul(self.C)  # possible outputs
+            # print('Shape of c: ', c.shape)
 
             # Pass through Memory Network
             for _ in range(self._hops):
-                o = torch.zeros(self._sentence_size)  # Embedded output
+                o = Var(torch.zeros(self._embedding_size).type(dtype), requires_grad=False)
 
                 # Iterate over m_i to get p_i
+                # print('\nNumber of sentences: ', m.shape[0])
                 for i in range(int(m.data.shape[0])):
                     prob = self.softmax(u.dot(m[i]))  # probability of each possible output
-                    o += prob * c[i]
+                    # print('Probability shape: ', prob.shape)
+                    # print('c shape: ', c[i].shape)
+                    o += prob * c[i]                  # generate embedded output
 
                 # Update next input
-                u = o + u.mm(self.H)
+                u = o + u.matmul(self.H)
 
             # Get prediction
-            a_pred.data[b] = self.softmax(u.dot(self.W))
+            a_pred[b] = self.softmax(u.dot(self.W))
 
-        return dtype(a_pred)
+        return a_pred
 
     def batch_train(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
-        answers = dtype(answers)
+        # print(answers)
+        # answers = Var(dtype(answers), requires_grad=False)
 
         loss = -answers.dot(torch.log(a_pred))
 
