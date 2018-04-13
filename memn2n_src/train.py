@@ -7,7 +7,7 @@ import torchvision
 import numpy as np
 import torch.nn as nn
 from DataLoader import CDATA
-from main_model import MemN2NDialog
+from main_model import MemN2NDialog, MemN2NDialog_2
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
 
 

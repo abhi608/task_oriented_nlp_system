@@ -110,3 +110,74 @@ class MemN2NDialog(object):
         self.H.grad.data.zero_()
         self.C.grad.data.zero_()
         self.W.grad.data.zero_()
+
+
+class MemN2NDialog_2(MemN2NDialog):
+    """End-To-End Memory Network."""
+
+    def __init__(self, batch_size, vocab_size, candidate_size, sentence_size, candidates_vec,
+                 embedding_size=20, hops=3, learning_rate=1e-6, max_grad_norm=40.0, task_id=1):
+
+        # Constants
+        self._batch_size = batch_size
+        self._vocab_size = vocab_size
+        self._sentence_size = sentence_size
+        self._embedding_size = embedding_size
+        self._hops = hops
+        self._max_grad_norm = max_grad_norm
+        self._learn_rate = learning_rate
+        self._candidate_size = candidate_size
+        self._candidates = candidates_vec
+
+        # Weight matrices
+        self.A = Var(torch.randn(self._sentence_size,
+                                 self._embedding_size).type(dtype), requires_grad=True)
+        self.C = []
+        for _ in range(hops):
+            self.C.append(Var(torch.randn(self._sentence_size,
+                                     self._embedding_size).type(dtype), requires_grad=True))
+        self.W = Var(torch.randn(self._embedding_size,
+                                 self._candidates.shape[0]).type(dtype), requires_grad=True)
+
+        # Functions
+        self.softmax = torch.nn.Softmax(dim=0)
+
+    def single_pass(self, stories, queries):
+        # Initialize predictions
+        a_pred = []
+
+        # Iterate over batch_size
+        for b in range(len(queries)):
+            # Get Embeddings
+            u = queries[b].matmul(self.A)     # query embeddings
+            m = stories[b].matmul(self.A)     # memory vectors
+
+            # Pass through Memory Network
+            for hop in range(self._hops):
+                c = stories[b].matmul(self.C[hop])  # possible outputs
+
+                o = Var(torch.zeros(self._embedding_size).type(dtype), requires_grad=False)
+                # Iterate over m_i to get p_i
+                for i in range(int(m.data.shape[0])):
+                    prob = self.softmax(u.dot(m[i]))  # probability of each possible output
+                    o += prob * c[i]                  # generate embedded output
+
+                # Update next input
+                u = torch.nn.functional.normalize(o + u, dim=0)
+                m = c
+
+            # Get prediction
+            a_pred.append(self.softmax(u.matmul(self.W)))
+
+        return a_pred
+
+    def update_weights(self):
+        self.A.data -= self._learn_rate * self.A.grad.data
+        self.A.grad.data.zero_()
+
+        for hop in range(self._hops):
+            self.C[hop].data -= self._learn_rate * self.C[hop].grad.data
+            self.C[hop].grad.data.zero_()
+
+        self.W.data -= self._learn_rate * self.W.grad.data
+        self.W.grad.data.zero_()
