@@ -152,7 +152,7 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         S.append(ss)
         Q.append(q)
         A.append(answer)
-    return np.array(S), np.array(Q), np.array(A)
+    return S, Q, A
 
 
 

@@ -58,12 +58,13 @@ class MemN2NDialog(object):
             # Get prediction
             a_pred.data[b] = self.softmax(u.dot(self.W))
 
-        return a_pred
+        return dtype(a_pred)
 
     def batch_train(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
+        answers = dtype(answers)
 
-        loss = -(answers * torch.log(a_pred)).sum()
+        loss = -answers.dot(torch.log(a_pred))
 
         # Backprop and update weights
         loss.backward()
