@@ -9,7 +9,7 @@ class MemN2NDialog(object):
     """End-To-End Memory Network."""
 
     def __init__(self, batch_size, vocab_size, candidate_size, sentence_size, candidates_vec,
-                embedding_size=20, hops=3, learning_rate=1e-6, max_grad_norm=40.0, task_id=1):
+                 embedding_size=20, hops=3, learning_rate=1e-6, max_grad_norm=40.0, task_id=1):
 
         # Constants
         self._batch_size = batch_size
@@ -27,8 +27,8 @@ class MemN2NDialog(object):
                                  self._embedding_size).type(dtype), requires_grad=True)
         self.H = Var(torch.randn(self._embedding_size,
                                  self._embedding_size).type(dtype), requires_grad=True)
-        self.W = Var(torch.randn(self._embedding_size).type(
-            dtype), requires_grad=True)
+        self.W = Var(torch.randn(self._embedding_size,
+                                 self._candidate_size).type(dtype), requires_grad=True)
 
         # Functions
         self.softmax = torch.nn.Softmax(dim=0)
@@ -66,10 +66,11 @@ class MemN2NDialog(object):
             # Get prediction
             # print (torch.mul(u, self.W))
             # print "/////////////////////////////////////////"
-            # a_pred[b] = self.softmax(u.dot(self.W))
-            tmp = self.softmax(torch.mul(u, self.W))
-            print tmp
-            a_pred[b] = tmp
+            print("predict: ", u.matmul(self.W))
+            a_pred[b] = self.softmax(u.matmul(self.W))
+            # tmp = self.softmax(torch.mul(u, self.W))
+            # print tmp
+            # a_pred[b] = tmp
 
         return a_pred
 
@@ -79,10 +80,10 @@ class MemN2NDialog(object):
         # print(answers)
         # answers = Var(dtype(answers), requires_grad=False)
         # print a_pred.data.shape
-        loss = -answers.dot(torch.log(a_pred))
-        print "loss: ", loss.data
+        loss = -answers.bmm(torch.log(a_pred))  
+        # print "loss: ", loss.data
         # print a_pred
-        print "-----------------------"
+        # print "-----------------------"
 
         # Backprop and update weights
         loss.backward()
@@ -91,7 +92,7 @@ class MemN2NDialog(object):
     def batch_test(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
 
-        loss = -(answers * torch.log(a_pred)).sum()        
+        loss = -(answers * torch.log(a_pred)).sum()
 
         return a_pred, loss
 
