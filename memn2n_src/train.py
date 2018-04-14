@@ -32,6 +32,7 @@ class chatBot(object):
 
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                                    train=0, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
+        self.test_dataset = self.train_dataset
         self.model = MemN2NDialog(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
                                     candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
                                     candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
@@ -64,6 +65,7 @@ class chatBot(object):
 
     # <<<<<<< NEW >>>>>>>
     def test(self):
+        print("STARTED TESTING")
         testS, testQ, testA = self.test_dataset.getData()
         assert len(testS) == len(testQ) and len(testQ) == len(testA)
         n_test = len(testS)
@@ -136,10 +138,10 @@ if __name__ == "__main__":
                         help='Directory containing bAbI tasks')
     parser.add_argument('--model_dir', default='model/',
                         help='Directory containing memn2n model checkpoints')
-    parser.add_argument('--train', default=True, type=bool, help='Train if True, test if False')
-    parser.add_argument('--interactive', default=False, type=bool, help='if True, interactive')
-    parser.add_argument('--OOV', default=False, type=bool, help='if True, use OOV test set')
-    parser.add_argument('--print_params', default=True, type=bool,
+    parser.add_argument('--train', default=1, type=int, help='Train if True, test if False')
+    parser.add_argument('--interactive', default=0, type=int, help='if True, interactive')
+    parser.add_argument('--OOV', default=0, type=int, help='if True, use OOV test set')
+    parser.add_argument('--print_params', default=1, type=int,
                         help='pass False to turn off printing input parameters')
 
     args = parser.parse_args()
