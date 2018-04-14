@@ -61,7 +61,7 @@ class chatBot(object):
             print('loss = ', loss / n_train)
 
             if epoch % SAVE_FREQ == 0:
-                fname = 'models/model_task{0}_weights.tar'.format(self.task_id)
+                fname = 'models/task{0}_epoch{1}_weights.tar'.format(self.task_id, epoch)
                 self.model.save_weights(filename=fname)
 
     def test(self, data_type):
@@ -72,7 +72,7 @@ class chatBot(object):
         assert len(testS) == len(testQ) and len(testQ) == len(testA)
         n_test = len(testS)
 
-        fname = 'models/model_task{0}_weights.tar'.format(self.task_id)
+        fname = 'models/task{0}_epoch{1}_weights.tar'.format(self.task_id)
         self.model.load_weights(filename=fname)
 
         acc, loss = self.model.test(testS, testQ, testA)
