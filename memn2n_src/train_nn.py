@@ -7,7 +7,7 @@ import torchvision
 import numpy as np
 import torch.nn as nn
 from DataLoader import CDATA
-from main_model_new import MemN2NDialog
+from main_model_nn import MemN2NDialog
 from torch.autograd import Variable as Var
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
 
@@ -38,8 +38,6 @@ class chatBot(object):
                                   candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
                                   candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
                                   learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
-        # criterion = nn.CrossEntropyLoss()
-        # optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
     def train(self):
         trainS, trainQ, trainA = self.train_dataset.getData()
@@ -50,12 +48,6 @@ class chatBot(object):
         batches = [(start, end) for start, end in batches]
 
         criterion = nn.CrossEntropyLoss()
-        # print self.model.parameters()
-        optimizer = torch.optim.Adam([{'params': self.model.parameters()}], lr=self.learning_rate)
-        # self.modelparams = 
-        # for param in self.model.parameters():
-        #     print param.size()
-        # print "HELL!"
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
         for epoch in range(self.epochs):
