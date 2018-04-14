@@ -10,6 +10,7 @@ from data_utils import load_candidates, load_dialog_task, vectorize_candidates
 
 SAVE_FREQ = 2
 
+
 class chatBot(object):
     def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False,
                  memory_size=50, random_state=None, batch_size=32, learning_rate=0.001, epsilon=1e-8,
@@ -33,9 +34,9 @@ class chatBot(object):
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                                    train=0, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
         self.model = MemN2NDialog(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
-                                    candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
-                                    candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
-                                    learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
+                                  candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
+                                  candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
+                                  learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
         # criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
@@ -59,19 +60,14 @@ class chatBot(object):
                 loss += self.model.batch_train(s, q, a)
             print('loss = ', loss / n_train)
 
-            if epoch%SAVE_FREQ==0:
-                # self.test(0)
-                # self.test(1)
-                # self.test(2)
+            if epoch % SAVE_FREQ == 0:
                 fname = 'models/model_task{0}_weights.tar'.format(self.task_id)
                 self.model.save_weights(filename=fname)
 
-    # <<<<<<< NEW >>>>>>>
-    def test(self,data_type):
-        # 0->train, 1->validate, 2->test
+    def test(self, data_type):
         print("\nSTARTED TESTING")
         dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
-                                   train=data_type, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
+                        train=data_type, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
         testS, testQ, testA = dataset.getData()
         assert len(testS) == len(testQ) and len(testQ) == len(testA)
         n_test = len(testS)
@@ -81,7 +77,6 @@ class chatBot(object):
 
         acc, loss = self.model.test(testS, testQ, testA)
         print('Accuracy = ', acc)
-
 
     def build_vocab(self, data, candidates):
         vocab = reduce(lambda x, y: x | y, (set(
