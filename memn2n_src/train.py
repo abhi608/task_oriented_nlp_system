@@ -10,12 +10,11 @@ from main_model import MemN2NDialog, MemN2NDialog_2
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
 
 
-SAVE_FREQ = 2
-
 class chatBot(object):
     def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False,
                  memory_size=50, random_state=None, batch_size=32, learning_rate=0.001, epsilon=1e-8,
-                 max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20):
+                 max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20, save_model=10,
+                 checkpoint_path='./models'):
         self.data_dir = data_dir
         self.task_id = task_id
         self.model_dir = model_dir
@@ -31,6 +30,8 @@ class chatBot(object):
         self.hops = hops
         self.epochs = epochs
         self.embedding_size = embedding_size
+        self.save_model = save_model
+        self.checkpoint_path = checkpoint_path
 
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                                    train=0, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
@@ -61,10 +62,7 @@ class chatBot(object):
                 loss += self.model.batch_train(s, q, a)
             print('loss = ', loss / n_train)
 
-            if epoch%SAVE_FREQ==0:
-                # self.test(0)
-                # self.test(1)
-                # self.test(2)
+            if epoch%self.save_model==0:
                 fname = 'model_task{0}_weights.tar'.format(self.task_id)
                 self.model.save_weights(filename=fname)
 
@@ -116,7 +114,8 @@ def main(params):
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     chatbot = chatBot(data_dir=params['data_dir'], model_dir=model_dir, task_id=params['task_id'], isInteractive=params['interactive'], OOV=params['OOV'], memory_size=params['memory_size'], random_state=params['random_state'], batch_size=params['batch_size'],
-                      learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'])
+                      learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'],
+                      save_model=params['save_model'], checkpoint_path=params['checkpoint_path'])
     if params['train']:
         chatbot.train()
     else:
@@ -153,6 +152,10 @@ if __name__ == "__main__":
     parser.add_argument('--OOV', default=0, type=int, help='if True, use OOV test set')
     parser.add_argument('--print_params', default=1, type=int,
                         help='pass False to turn off printing input parameters')
+    parser.add_argument('--save_model', default=5, type=int,
+                        help='Save model after every x epochs')
+    parser.add_argument('--checkpoint_path', default='./path',
+                        help='Path to the directory to save models')
 
     args = parser.parse_args()
     params = vars(args)  # convert to ordinary dict

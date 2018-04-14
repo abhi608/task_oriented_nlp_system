@@ -110,7 +110,7 @@ def main(params):
         os.makedirs(model_dir)
     chatbot = chatBot(data_dir=params['data_dir'], model_dir=model_dir, task_id=params['task_id'], isInteractive=params['interactive'], OOV=params['OOV'], memory_size=params['memory_size'], random_state=params['random_state'], batch_size=params['batch_size'],
                       learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'],
-                      save_model=params['save_model'])
+                      save_model=params['save_model'], checkpoint_path=params['checkpoint_path'])
     if params['train']:
         chatbot.train()
     # else:
