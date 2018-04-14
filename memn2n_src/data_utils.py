@@ -3,11 +3,13 @@ from __future__ import absolute_import
 import os
 import re
 import torch
-import numpy as np
 from torch.autograd import Variable as Var
 
 stop_words = set(["a", "an", "the"])
 
+dtype = torch.FloatTensor
+if torch.cuda.device_count() > 0:
+    dtype = torch.cuda.FloatTensor
 
 def load_candidates(data_dir, task_id):
     assert task_id > 0 and task_id < 7
@@ -118,7 +120,7 @@ def vectorize_candidates(candidates, word_idx, sentence_size):
     for i, candidate in enumerate(candidates):
         lc = max(0, sentence_size - len(candidate))
         C.append([word_idx[w] if w in word_idx else 0 for w in candidate] + [0] * lc)
-    return torch.FloatTensor(C)
+    return dtype(C)
 
 
 def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, max_memory_size, nn=False):
@@ -154,15 +156,15 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
 
         lq = max(0, sentence_size - len(query))
         q = [word_idx[w] if w in word_idx else 0 for w in query] + [0] * lq
-        S.append(Var(torch.FloatTensor(ss)))
-        Q.append(Var(torch.FloatTensor(q)))
+        S.append(Var(dtype(ss)))
+        Q.append(Var(dtype(q)))
         answer_to_send = [0] * candidates_size
         answer_to_send[answer] = 1
         if nn:
             A.append(answer)
         else:
-            A.append(Var(torch.FloatTensor(answer_to_send)))
+            A.append(Var(dtype(answer_to_send)))
     if nn:
-        return S, Q, Var(torch.LongTensor(A))
+        return S, Q, Var(dtype(A))
     else:
         return S, Q, A

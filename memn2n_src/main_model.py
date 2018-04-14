@@ -3,7 +3,8 @@ import numpy as np
 from torch.autograd import Variable as Var
 
 dtype = torch.FloatTensor
-
+if torch.cuda.device_count() > 0:
+    dtype = torch.cuda.FloatTensor
 
 class MemN2NDialog(object):
     """End-To-End Memory Network."""
@@ -31,8 +32,6 @@ class MemN2NDialog(object):
                                  self._embedding_size).type(dtype), requires_grad=True)
         self.W = Var(torch.randn(self._embedding_size,
                                  self._candidates.shape[0]).type(dtype), requires_grad=True)
-
-        # print(self.W.data)
 
         # Functions
         self.softmax = torch.nn.Softmax(dim=0)
@@ -80,7 +79,6 @@ class MemN2NDialog(object):
 
         # Backprop and update weights
         loss.backward()
-        print(self.W.grad.data)
         self.update_weights()
 
         return float(loss.data)

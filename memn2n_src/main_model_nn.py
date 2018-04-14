@@ -4,6 +4,8 @@ import torch.nn as nn
 from torch.autograd import Variable as Var
 
 dtype = torch.FloatTensor
+if torch.cuda.device_count() > 0:
+    dtype = torch.cuda.FloatTensor
 
 
 class MemN2NDialog(nn.Module):
@@ -24,13 +26,12 @@ class MemN2NDialog(nn.Module):
         self.candidates = candidates_vec
 
         # Weight matrices
-        self.fc1 = nn.Linear(self._sentence_size, self._embedding_size, bias=False) #A
-        self.fc2 = nn.Linear(self._sentence_size, self._embedding_size, bias=False) #C
-        self.fc3 = nn.Linear(self._embedding_size, self._embedding_size, bias=False) #H
-        self.fc4 = nn.Linear(self._embedding_size, int(self.candidates.shape[0]), bias=False) #W
+        self.fc1 = nn.Linear(self._sentence_size, self._embedding_size, bias=False)  # A
+        self.fc2 = nn.Linear(self._sentence_size, self._embedding_size, bias=False)  # C
+        self.fc3 = nn.Linear(self._embedding_size, self._embedding_size, bias=False)  # H
+        self.fc4 = nn.Linear(self._embedding_size, int(self.candidates.shape[0]), bias=False)  # W
         self.softmax = torch.nn.Softmax(dim=0)
 
-        
     def single_pass(self, stories, queries):
         # Initialize predictions
         a_pred = []
@@ -41,9 +42,11 @@ class MemN2NDialog(nn.Module):
             # print('query size: ', queries[b].shape)
             u = self.fc1(queries[b].view(1, self._sentence_size)).view(self._embedding_size)
             # print('Shape of u: ', u.shape)
-            m = self.fc1(stories[b].view(1, int(stories[b].data.shape[0]), self._sentence_size)).view(int(stories[b].data.shape[0]), self._embedding_size)
+            m = self.fc1(stories[b].view(1, int(stories[b].data.shape[0]), self._sentence_size)).view(
+                int(stories[b].data.shape[0]), self._embedding_size)
             # print('Shape of m: ', m.shape)
-            c = self.fc2(stories[b].view(1, int(stories[b].data.shape[0]), self._sentence_size)).view(int(stories[b].data.shape[0]), self._embedding_size)
+            c = self.fc2(stories[b].view(1, int(stories[b].data.shape[0]), self._sentence_size)).view(
+                int(stories[b].data.shape[0]), self._embedding_size)
             # print('Shape of c: ', c.shape)
 
             # Pass through Memory Network
@@ -56,10 +59,12 @@ class MemN2NDialog(nn.Module):
                     o += prob * c[i]                  # generate embedded output
 
                 # Update next input
-                u = torch.nn.functional.normalize(o + self.fc3(u.view(1, self._embedding_size)).view(self._embedding_size), dim=0)
+                u = torch.nn.functional.normalize(
+                    o + self.fc3(u.view(1, self._embedding_size)).view(self._embedding_size), dim=0)
 
             # Get prediction
-            a_pred.append(self.softmax(self.fc4(u.view(1, self._embedding_size)).view(int(self.candidates.shape[0]))))
+            a_pred.append(self.softmax(self.fc4(u.view(1, self._embedding_size)
+                                                ).view(int(self.candidates.shape[0]))))
 
         return a_pred
 

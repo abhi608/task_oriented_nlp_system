@@ -3,7 +3,6 @@ import os
 import json
 import torch
 import argparse
-import torchvision
 import numpy as np
 import torch.nn as nn
 from DataLoader import CDATA
@@ -33,7 +32,7 @@ class chatBot(object):
 
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                                    train=0, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
-        self.model = MemN2NDialog(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
+        self.model = MemN2NDialog_2(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
                                   candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
                                   candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
                                   learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
