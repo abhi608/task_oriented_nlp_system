@@ -34,6 +34,7 @@ class MemN2NDialog(nn.Module):
         self.softmax = torch.nn.Softmax(dim=0)
 
     def single_pass(self, stories, queries):
+        print(stories[0].data.__class__, queries[0].data.__class__)
         # Initialize predictions
         a_pred = []
 
