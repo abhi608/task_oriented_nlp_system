@@ -70,7 +70,10 @@ class chatBot(object):
                 print("Saving models")
                 if not os.path.exists(self.checkpoint_path):
                     os.makedirs(self.checkpoint_path)
-                model_name = os.path.join(self.checkpoint_path, str(epoch))
+                model_name = os.path.join(self.checkpoint_path, str(self.task_id))
+                if not os.path.exists(model_name):
+                    os.makedirs(model_name)
+                model_name = os.path.join(model_name, str(epoch))
                 torch.save(self.model.state_dict(), model_name)
             #------------------------------------------------------------------------------------------
 
