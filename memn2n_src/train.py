@@ -1,10 +1,8 @@
 from __future__ import absolute_import
 import os
 import json
-import torch
 import argparse
 import numpy as np
-import torch.nn as nn
 from DataLoader import CDATA
 from main_model import MemN2NDialog, MemN2NDialog_2
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
@@ -60,17 +58,16 @@ class chatBot(object):
                 loss += self.model.batch_train(s, q, a)
             print('loss = ', loss / n_train)
 
-        fname = 'model_task{0}_weights.tar'.format(self.task_id)
+        fname = 'models/model_task{0}_weights.tar'.format(self.task_id)
         self.model.save_weights(filename=fname)
 
-    # <<<<<<< NEW >>>>>>>
     def test(self):
         print("STARTED TESTING")
         testS, testQ, testA = self.test_dataset.getData()
         assert len(testS) == len(testQ) and len(testQ) == len(testA)
         n_test = len(testS)
 
-        fname = 'model_task{0}_weights.tar'.format(self.task_id)
+        fname = 'models/model_task{0}_weights.tar'.format(self.task_id)
         self.model.load_weights(filename=fname)
 
         acc, loss = self.model.test(testS, testQ, testA)
