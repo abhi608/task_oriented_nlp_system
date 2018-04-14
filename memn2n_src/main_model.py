@@ -6,6 +6,7 @@ dtype = torch.FloatTensor
 if torch.cuda.device_count() > 0:
     dtype = torch.cuda.FloatTensor
 
+
 class MemN2NDialog(object):
     """End-To-End Memory Network."""
 
@@ -83,14 +84,23 @@ class MemN2NDialog(object):
 
         return float(loss.data)
 
-    def batch_test(self, stories, queries, answers):
+    def test(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
+        assert len(a_pred) == len(answers)
 
         loss = -answers[0].dot(torch.log(a_pred[0]))
-        for b in range(1, self._batch_size):
+        for b in range(1, len(a_pred)):
             loss += -answers[b].dot(torch.log(a_pred[b]))
 
-        return a_pred, loss
+        acc = 0
+        for b in range(len(a_pred)):
+            pred = np.argmax(a_pred[b].data.numpy())
+            actual = np.argmax(answers[b].data.numpy())
+            if pred == actual:
+                acc += 1
+        acc /= len(a_pred)
+
+        return acc, loss
 
     def predict(self, story, query):
         a_pred = self.single_pass([story], [query])
@@ -112,6 +122,17 @@ class MemN2NDialog(object):
         self.H.grad.data.zero_()
         self.C.grad.data.zero_()
         self.W.grad.data.zero_()
+
+    def save_weights(self, filename='model_weights.tar'):
+        weights = {'W': self.W, 'A': self.A, 'C': self.C, 'H': self.H}
+        torch.save(weights, filename)
+
+    def load_weights(self, filename='model_weights.tar'):
+        weights = torch.load(filename)
+        self.W = weights['W']
+        self.A = weights['A']
+        self.H = weights['H']
+        self.C = weights['C']
 
 
 class MemN2NDialog_2(MemN2NDialog):
@@ -137,7 +158,7 @@ class MemN2NDialog_2(MemN2NDialog):
         self.C = []
         for _ in range(hops):
             self.C.append(Var(torch.randn(self._sentence_size,
-                                     self._embedding_size).type(dtype), requires_grad=True))
+                                          self._embedding_size).type(dtype), requires_grad=True))
         self.W = Var(torch.randn(self._embedding_size,
                                  self._candidates.shape[0]).type(dtype), requires_grad=True)
 
@@ -183,3 +204,13 @@ class MemN2NDialog_2(MemN2NDialog):
 
         self.W.data -= self._learn_rate * self.W.grad.data
         self.W.grad.data.zero_()
+
+    def save_weights(self, filename='model_weights.tar'):
+        weights = {'W': self.W, 'C': self.C, 'A': self.A}
+        torch.save(weights, filename)
+
+    def load_weights(self, filename='model_weights.tar'):
+        weights = torch.load(filename)
+        self.W = weights['W']
+        self.A = weights['A']
+        self.C = weights['C']

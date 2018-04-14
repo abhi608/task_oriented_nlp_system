@@ -32,10 +32,10 @@ class chatBot(object):
 
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                                    train=0, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
-        self.model = MemN2NDialog_2(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
-                                  candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
-                                  candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
-                                  learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
+        self.model = MemN2NDialog(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
+                                    candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
+                                    candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
+                                    learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
         # criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
@@ -58,6 +58,22 @@ class chatBot(object):
                 # print("S: ", a[0].data.shape)
                 loss += self.model.batch_train(s, q, a)
             print('loss = ', loss / n_train)
+
+        fname = 'model_task{0}_weights.tar'.format(self.task_id)
+        self.model.save_weights(filename=fname)
+
+    # <<<<<<< NEW >>>>>>>
+    def test(self):
+        testS, testQ, testA = self.test_dataset.getData()
+        assert len(testS) == len(testQ) and len(testQ) == len(testA)
+        n_test = len(testS)
+
+        fname = 'model_task{0}_weights.tar'.format(self.task_id)
+        self.model.load_weights(filename=fname)
+
+        acc, loss = self.model.test(testS, testQ, testA)
+        print('Accuracy = ', acc)
+        print('Loss = ', loss / n_test)
 
     def build_vocab(self, data, candidates):
         vocab = reduce(lambda x, y: x | y, (set(
@@ -93,8 +109,9 @@ def main(params):
                       learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'])
     if params['train']:
         chatbot.train()
-    # else:
-    #     chatbot.test()
+    else:
+        chatbot.test()
+    # chatbot.test()
 
 
 if __name__ == "__main__":
@@ -130,4 +147,5 @@ if __name__ == "__main__":
     if params['print_params']:
         print('parsed input parameters:')
         print(json.dumps(params, indent=2))
+
 main(params)
