@@ -39,8 +39,9 @@ class chatBot(object):
                                    train=0, batch_size=self.batch_size, nn=False)  # 0->train, 1->validate, 2->test
         self.model = MemN2NDialog(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
                                   candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
-                                  candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
                                   learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
 
     def train(self):
         trainS, trainQ, trainA = self.train_dataset.getData()

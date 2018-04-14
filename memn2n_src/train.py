@@ -8,10 +8,6 @@ from main_model import MemN2NDialog, MemN2NDialog_2
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
 from matplotlib import pyplot as plt
 
-
-
-SAVE_FREQ = 5
-
 class chatBot(object):
     def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False,
                  memory_size=50, random_state=None, batch_size=32, learning_rate=0.001, epsilon=1e-8,
@@ -67,7 +63,7 @@ class chatBot(object):
             self.losses.append(loss)
             print('loss = ', loss / n_train)
 
-            if epoch % SAVE_FREQ == 0:
+            if epoch % self.save_model == 0:
                 fname = 'scratch_models/task{0}_epoch{1}_weights.tar'.format(self.task_id, epoch)
                 self.model.save_weights(filename=fname)
 
