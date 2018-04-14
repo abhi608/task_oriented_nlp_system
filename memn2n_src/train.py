@@ -1,14 +1,16 @@
 from __future__ import absolute_import
 import os
 import json
-import torch
 import argparse
 import numpy as np
-import torch.nn as nn
 from DataLoader import CDATA
 from main_model import MemN2NDialog, MemN2NDialog_2
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
+from matplotlib import pyplot as plt
 
+
+
+SAVE_FREQ = 5
 
 class chatBot(object):
     def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False,
@@ -33,12 +35,14 @@ class chatBot(object):
         self.save_model = save_model
         self.checkpoint_path = checkpoint_path
 
+        self.losses = []
+
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                                    train=0, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
         self.model = MemN2NDialog(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
-                                    candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
-                                    candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
-                                    learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
+                                  candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
+                                  candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
+                                  learning_rate=self.learning_rate, max_grad_norm=self.max_grad_norm, task_id=self.task_id)
         # criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
@@ -58,30 +62,28 @@ class chatBot(object):
                 s = trainS[start:end]
                 q = trainQ[start:end]
                 a = trainA[start:end]
-                # print("S: ", a[0].data.shape)
                 loss += self.model.batch_train(s, q, a)
+
+            self.losses.append(loss)
             print('loss = ', loss / n_train)
 
-            if epoch%self.save_model==0:
-                fname = 'model_task{0}_weights.tar'.format(self.task_id)
+            if epoch % SAVE_FREQ == 0:
+                fname = 'scratch_models/task{0}_epoch{1}_weights.tar'.format(self.task_id, epoch)
                 self.model.save_weights(filename=fname)
 
-    # <<<<<<< NEW >>>>>>>
-    def test(self,data_type):
-        # 0->train, 1->validate, 2->test
-        print("STARTED TESTING")
+    def test(self, data_type):
+        print("\nSTARTED TESTING")
         dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                         train=data_type, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
         testS, testQ, testA = dataset.getData()
         assert len(testS) == len(testQ) and len(testQ) == len(testA)
         n_test = len(testS)
 
-        fname = 'model_task{0}_weights.tar'.format(self.task_id)
+        fname = 'scratch_models/task{0}_epoch{1}_weights.tar'.format(self.task_id)
         self.model.load_weights(filename=fname)
 
         acc, loss = self.model.test(testS, testQ, testA)
         print('Accuracy = ', acc)
-
 
     def build_vocab(self, data, candidates):
         vocab = reduce(lambda x, y: x | y, (set(
@@ -118,6 +120,12 @@ def main(params):
                       save_model=params['save_model'], checkpoint_path=params['checkpoint_path'])
     if params['train']:
         chatbot.train()
+        # Plot Losses
+        plt.plot(chatbot.losses)
+        plt.x_label('Epochs')
+        plt.y_label('Losses')
+        plt.show()
+        plt.savefig('scratch_models/task{0}_epochs{1}_plot.png'.format(chatbot.task_id, chatbot.epochs))
     else:
         chatbot.test(0)
         chatbot.test(1)

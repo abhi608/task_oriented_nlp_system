@@ -3,3 +3,5 @@
 ./memn2n_src/task*
 *.pyc
 ./memn2n_src/models
+./memn2n_src/__pycache__
+./memn2n_src/scratch_models/*.tar
