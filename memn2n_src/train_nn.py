@@ -139,10 +139,10 @@ if __name__ == "__main__":
                         help='Directory containing bAbI tasks')
     parser.add_argument('--model_dir', default='model/',
                         help='Directory containing memn2n model checkpoints')
-    parser.add_argument('--train', default=True, type=bool, help='Train if True, test if False')
-    parser.add_argument('--interactive', default=False, type=bool, help='if True, interactive')
-    parser.add_argument('--OOV', default=False, type=bool, help='if True, use OOV test set')
-    parser.add_argument('--print_params', default=True, type=bool,
+    parser.add_argument('--train', default=1, type=int, help='Train if True, test if False')
+    parser.add_argument('--interactive', default=0, type=int, help='if True, interactive')
+    parser.add_argument('--OOV', default=0, type=int, help='if True, use OOV test set')
+    parser.add_argument('--print_params', default=1, type=int,
                         help='pass False to turn off printing input parameters')
     parser.add_argument('--save_model', default=5, type=int,
                         help='Save model after every x epochs')
