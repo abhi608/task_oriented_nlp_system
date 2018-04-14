@@ -6,6 +6,7 @@ from torch.autograd import Variable as Var
 dtype = torch.FloatTensor
 if torch.cuda.device_count() > 0:
     dtype = torch.cuda.FloatTensor
+    print("Running on GPU")
 
 
 class MemN2NDialog(object):
