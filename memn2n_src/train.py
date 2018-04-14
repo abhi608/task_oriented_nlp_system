@@ -6,9 +6,10 @@ import numpy as np
 from DataLoader import CDATA
 from main_model import MemN2NDialog, MemN2NDialog_2
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
+from matplotlib import pyplot as plt
 
 
-SAVE_FREQ = 2
+SAVE_FREQ = 5
 
 
 class chatBot(object):
@@ -30,6 +31,8 @@ class chatBot(object):
         self.hops = hops
         self.epochs = epochs
         self.embedding_size = embedding_size
+
+        self.losses = []
 
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                                    train=0, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
@@ -56,12 +59,13 @@ class chatBot(object):
                 s = trainS[start:end]
                 q = trainQ[start:end]
                 a = trainA[start:end]
-                # print("S: ", a[0].data.shape)
                 loss += self.model.batch_train(s, q, a)
+
+            self.losses.append(loss)
             print('loss = ', loss / n_train)
 
             if epoch % SAVE_FREQ == 0:
-                fname = 'models/task{0}_epoch{1}_weights.tar'.format(self.task_id, epoch)
+                fname = 'scratch_models/task{0}_epoch{1}_weights.tar'.format(self.task_id, epoch)
                 self.model.save_weights(filename=fname)
 
     def test(self, data_type):
@@ -72,7 +76,7 @@ class chatBot(object):
         assert len(testS) == len(testQ) and len(testQ) == len(testA)
         n_test = len(testS)
 
-        fname = 'models/task{0}_epoch{1}_weights.tar'.format(self.task_id)
+        fname = 'scratch_models/task{0}_epoch{1}_weights.tar'.format(self.task_id)
         self.model.load_weights(filename=fname)
 
         acc, loss = self.model.test(testS, testQ, testA)
@@ -112,6 +116,12 @@ def main(params):
                       learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'])
     if params['train']:
         chatbot.train()
+        # Plot Losses
+        plt.plot(chatbot.losses)
+        plt.x_label('Epochs')
+        plt.y_label('Losses')
+        plt.show()
+        plt.savefig('scratch_models/task{0}_epochs{1}_plot.png'.format(chatbot.task_id, chatbot.epochs))
     else:
         chatbot.test(0)
         chatbot.test(1)
