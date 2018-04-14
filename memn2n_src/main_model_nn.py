@@ -82,7 +82,6 @@ class MemN2NDialog(nn.Module):
 
     def test(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
-        print len(a_pred), len(answers)
         assert len(a_pred) == len(answers)
 
         loss = -answers[0].dot(torch.log(a_pred[0]))
