@@ -1,3 +1,4 @@
+from __future__ import division
 import torch
 import numpy as np
 import torch.nn as nn
@@ -37,7 +38,7 @@ class MemN2NDialog(nn.Module):
         a_pred = []
 
         # Iterate over batch_size
-        for b in range(self._batch_size):
+        for b in range(len(queries)):
             # Get Embeddings
             # print('query size: ', queries[b].shape)
             u = self.fc1(queries[b].view(1, self._sentence_size)).view(self._embedding_size)
@@ -78,6 +79,25 @@ class MemN2NDialog(nn.Module):
         # Backprop and update weights
         loss.backward()
         return float(loss.data)
+
+    def test(self, stories, queries, answers):
+        a_pred = self.single_pass(stories, queries)
+        print len(a_pred), len(answers)
+        assert len(a_pred) == len(answers)
+
+        loss = -answers[0].dot(torch.log(a_pred[0]))
+        for b in range(1, len(a_pred)):
+            loss += -answers[b].dot(torch.log(a_pred[b]))
+
+        acc = 0
+        for b in range(len(a_pred)):
+            pred = np.argmax(a_pred[b].data.numpy())
+            actual = np.argmax(answers[b].data.numpy())
+            if pred == actual:
+                acc += 1
+        acc /= len(a_pred)
+
+        return acc, loss
 
     def batch_test(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)

@@ -71,7 +71,7 @@ class chatBot(object):
         # 0->train, 1->validate, 2->test
         print("STARTED TESTING")
         dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
-                                   train=data_type, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
+                        train=data_type, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
         testS, testQ, testA = dataset.getData()
         assert len(testS) == len(testQ) and len(testQ) == len(testA)
         n_test = len(testS)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
                         help='pass False to turn off printing input parameters')
     parser.add_argument('--save_model', default=5, type=int,
                         help='Save model after every x epochs')
-    parser.add_argument('--checkpoint_path', default='./path',
+    parser.add_argument('--checkpoint_path', default='./models',
                         help='Path to the directory to save models')
 
     args = parser.parse_args()

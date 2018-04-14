@@ -70,12 +70,27 @@ class chatBot(object):
                 print("Saving models")
                 if not os.path.exists(self.checkpoint_path):
                     os.makedirs(self.checkpoint_path)
-                model_name = os.path.join(self.checkpoint_path, str(self.task_id))
-                if not os.path.exists(model_name):
-                    os.makedirs(model_name)
-                model_name = os.path.join(model_name, str(epoch))
+                model_name = os.path.join(self.checkpoint_path, str(self.task_id) + '.pkl')
                 torch.save(self.model.state_dict(), model_name)
             #------------------------------------------------------------------------------------------
+
+
+    def test(self,data_type):
+        # 0->train, 1->validate, 2->test
+        print("----------------------------------------------------------------------")
+        print("STARTED TESTING: ", data_type)
+        dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
+                        train=data_type, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
+        testS, testQ, testA = dataset.getData()
+        assert len(testS) == len(testQ) and len(testQ) == len(testA)
+        n_test = len(testS)
+
+        fname = os.path.join(self.checkpoint_path, str(self.task_id) + '.pkl')
+        self.model.load_state_dict(torch.load(fname))
+
+        acc, loss = self.model.test(testS, testQ, testA)
+        print('Accuracy = ', acc)
+        print("----------------------------------------------------------------------")
 
 
     def build_vocab(self, data, candidates):
@@ -113,8 +128,10 @@ def main(params):
                       save_model=params['save_model'], checkpoint_path=params['checkpoint_path'])
     if params['train']:
         chatbot.train()
-    # else:
-    #     chatbot.test()
+    else:
+        chatbot.test(0)
+        chatbot.test(1)
+        chatbot.test(2)
 
 
 if __name__ == "__main__":
@@ -146,7 +163,7 @@ if __name__ == "__main__":
                         help='pass False to turn off printing input parameters')
     parser.add_argument('--save_model', default=5, type=int,
                         help='Save model after every x epochs')
-    parser.add_argument('--checkpoint_path', default='./path',
+    parser.add_argument('--checkpoint_path', default='./models',
                         help='Path to the directory to save models')
 
     args = parser.parse_args()
