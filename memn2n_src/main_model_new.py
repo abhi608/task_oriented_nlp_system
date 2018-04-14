@@ -1,16 +1,17 @@
 import torch
 import numpy as np
+import torch.nn as nn
 from torch.autograd import Variable as Var
 
 dtype = torch.FloatTensor
 
 
-class MemN2NDialog(object):
+class MemN2NDialog(nn.Module):
     """End-To-End Memory Network."""
 
     def __init__(self, batch_size, vocab_size, candidate_size, sentence_size, candidates_vec,
                  embedding_size=20, hops=3, learning_rate=1e-6, max_grad_norm=40.0, task_id=1):
-
+        super(MemN2NDialog, self).__init__()
         # Constants
         self._batch_size = batch_size
         self._vocab_size = vocab_size
@@ -23,34 +24,26 @@ class MemN2NDialog(object):
         self.candidates = candidates_vec
 
         # Weight matrices
-        self.A = Var(torch.randn(self._sentence_size,
-                                 self._embedding_size).type(dtype), requires_grad=True)
-        self.C = Var(torch.randn(self._sentence_size,
-                                 self._embedding_size).type(dtype), requires_grad=True)
-        self.H = Var(torch.randn(self._embedding_size,
-                                 self._embedding_size).type(dtype), requires_grad=True)
-        self.W = Var(torch.randn(self._embedding_size,
-                                 self.candidates.shape[0]).type(dtype), requires_grad=True)
-
-        # print(self.W.data)
-
-        # Functions
+        self.fc1 = nn.Linear(self._sentence_size, self._embedding_size, bias=False) #A
+        self.fc2 = nn.Linear(self._sentence_size, self._embedding_size, bias=False) #C
+        self.fc3 = nn.Linear(self._embedding_size, self._embedding_size, bias=False) #H
+        self.fc4 = nn.Linear(self._embedding_size, int(self.candidates.shape[0]), bias=False) #W
         self.softmax = torch.nn.Softmax(dim=0)
 
+        
     def single_pass(self, stories, queries):
         # Initialize predictions
-        # a_pred = Var(torch.randn(self._candidate_size).type(dtype), requires_grad=False)
         a_pred = []
 
         # Iterate over batch_size
         for b in range(self._batch_size):
             # Get Embeddings
             # print('query size: ', queries[b].shape)
-            u = queries[b].matmul(self.A)  # query embeddings
+            u = self.fc1(queries[b].view(1, self._sentence_size)).view(self._embedding_size)
             # print('Shape of u: ', u.shape)
-            m = stories[b].matmul(self.A)  # memory vectors
+            m = self.fc1(stories[b].view(1, int(stories[b].data.shape[0]), self._sentence_size)).view(int(stories[b].data.shape[0]), self._embedding_size)
             # print('Shape of m: ', m.shape)
-            c = stories[b].matmul(self.C)  # possible outputs
+            c = self.fc2(stories[b].view(1, int(stories[b].data.shape[0]), self._sentence_size)).view(int(stories[b].data.shape[0]), self._embedding_size)
             # print('Shape of c: ', c.shape)
 
             # Pass through Memory Network
@@ -63,28 +56,22 @@ class MemN2NDialog(object):
                     o += prob * c[i]                  # generate embedded output
 
                 # Update next input
-                u = torch.nn.functional.normalize(o + u.matmul(self.H), dim=0)
+                u = torch.nn.functional.normalize(o + self.fc3(u.view(1, self._embedding_size)).view(self._embedding_size), dim=0)
 
             # Get prediction
-            a_pred.append(self.softmax(u.matmul(self.W)))
+            a_pred.append(self.softmax(self.fc4(u.view(1, self._embedding_size)).view(int(self.candidates.shape[0]))))
 
         return a_pred
 
     def batch_train(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
-
         loss = -answers[0].dot(torch.log(a_pred[0]))
-        print("losssssss: ", loss.data)
 
         for b in range(1, self._batch_size):
             loss += -answers[b].dot(torch.log(a_pred[b]))
-        # print("loss: ", loss.data)
 
         # Backprop and update weights
         loss.backward()
-        print(self.W.grad.data)
-        self.update_weights()
-
         return float(loss.data)
 
     def batch_test(self, stories, queries, answers):
@@ -93,16 +80,3 @@ class MemN2NDialog(object):
         loss = -(answers * torch.log(a_pred)).sum()
 
         return a_pred, loss
-
-    def update_weights(self):
-        # print self.A.grad.data
-        self.A.data -= self._learn_rate * self.A.grad.data
-        self.H.data -= self._learn_rate * self.H.grad.data
-        self.C.data -= self._learn_rate * self.C.grad.data
-        self.W.data -= self._learn_rate * self.W.grad.data
-
-        # Manually zero the gradients after updating weights
-        self.A.grad.data.zero_()
-        self.H.grad.data.zero_()
-        self.C.grad.data.zero_()
-        self.W.grad.data.zero_()

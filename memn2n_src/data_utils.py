@@ -121,7 +121,7 @@ def vectorize_candidates(candidates, word_idx, sentence_size):
     return torch.FloatTensor(C)
 
 
-def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, max_memory_size):
+def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, max_memory_size, nn=False):
     """
     Vectorize stories and queries.
 
@@ -156,7 +156,13 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         q = [word_idx[w] if w in word_idx else 0 for w in query] + [0] * lq
         S.append(Var(torch.FloatTensor(ss)))
         Q.append(Var(torch.FloatTensor(q)))
-        answer_to_send = np.zeros((candidates_size), dtype=int)
+        answer_to_send = [0] * candidates_size
         answer_to_send[answer] = 1
-        A.append(Var(torch.FloatTensor(answer_to_send)))
-    return S, Q, A
+        if nn:
+            A.append(answer)
+        else:
+            A.append(Var(torch.FloatTensor(answer_to_send)))
+    if nn:
+        return S, Q, Var(torch.LongTensor(A))
+    else:
+        return S, Q, A

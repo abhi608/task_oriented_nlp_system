@@ -5,13 +5,14 @@ from data_utils import load_candidates, load_dialog_task, vectorize_candidates, 
 from functools import reduce
 
 class CDATA(object):
-    def __init__(self, data_dir, task_id, OOV=False, memory_size=50, train=0, batch_size=32):
+    def __init__(self, data_dir, task_id, OOV=False, memory_size=50, train=0, batch_size=32, nn=False):
         self.data_dir = data_dir
         self.task_id = task_id
         self.OOV = OOV
         self.memory_size = memory_size
         self.train = train
         self.batch_size = batch_size
+        self.nn = nn
         candidates, self.candid2indx = load_candidates(self.data_dir, self.task_id)
         self.n_cand = len(candidates)
         print("Candidate Size", self.n_cand)
@@ -33,15 +34,26 @@ class CDATA(object):
             'vocab_size': self.vocab_size
         }
 
-        if self.train == 0:
-            self.S, self.Q, self.A = vectorize_data(
-                self.trainData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
-        elif self.train == 1:
-            self.S, self.Q, self.A = vectorize_data(
-                self.valData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
-        elif self.train == 2:
-            self.S, self.Q, self.A = vectorize_data(
-                self.testData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
+        if self.nn:
+            if self.train == 0:
+                self.S, self.Q, self.A = vectorize_data(
+                    self.trainData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size, nn=self.nn)
+            elif self.train == 1:
+                self.S, self.Q, self.A = vectorize_data(
+                    self.valData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size, nn=self.nn)
+            elif self.train == 2:
+                self.S, self.Q, self.A = vectorize_data(
+                    self.testData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size, nn=self.nn)
+        else:
+            if self.train == 0:
+                self.S, self.Q, self.A = vectorize_data(
+                    self.trainData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
+            elif self.train == 1:
+                self.S, self.Q, self.A = vectorize_data(
+                    self.valData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
+            elif self.train == 2:
+                self.S, self.Q, self.A = vectorize_data(
+                    self.testData, self.word_idx, self.sentence_size, self.batch_size, self.n_cand, self.memory_size)
 
     def getData(self):
         return self.S, self.Q, self.A
