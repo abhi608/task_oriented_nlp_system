@@ -110,7 +110,7 @@ def main(params):
         os.makedirs(model_dir)
     chatbot = chatBot(data_dir=params['data_dir'], model_dir=model_dir, task_id=params['task_id'], isInteractive=params['interactive'], OOV=params['OOV'], memory_size=params['memory_size'], random_state=params['random_state'], batch_size=params['batch_size'],
                       learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'],
-                      save_model=params['save_model'])
+                      save_model=params['save_model'], checkpoint_path=params['checkpoint_path'])
     if params['train']:
         chatbot.train()
     # else:
@@ -139,10 +139,10 @@ if __name__ == "__main__":
                         help='Directory containing bAbI tasks')
     parser.add_argument('--model_dir', default='model/',
                         help='Directory containing memn2n model checkpoints')
-    parser.add_argument('--train', default=True, type=bool, help='Train if True, test if False')
-    parser.add_argument('--interactive', default=False, type=bool, help='if True, interactive')
-    parser.add_argument('--OOV', default=False, type=bool, help='if True, use OOV test set')
-    parser.add_argument('--print_params', default=True, type=bool,
+    parser.add_argument('--train', default=1, type=int, help='Train if True, test if False')
+    parser.add_argument('--interactive', default=0, type=int, help='if True, interactive')
+    parser.add_argument('--OOV', default=0, type=int, help='if True, use OOV test set')
+    parser.add_argument('--print_params', default=1, type=int,
                         help='pass False to turn off printing input parameters')
     parser.add_argument('--save_model', default=5, type=int,
                         help='Save model after every x epochs')
