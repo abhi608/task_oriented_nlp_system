@@ -90,8 +90,12 @@ class MemN2NDialog(nn.Module):
 
         acc = 0
         for b in range(len(a_pred)):
-            pred = np.argmax(a_pred[b].data.numpy())
-            actual = np.argmax(answers[b].data.numpy())
+            if torch.cuda.is_available():
+                pred = np.argmax(a_pred[b].data.cpu().numpy())
+                actual = np.argmax(answers[b].data.cpu().numpy())
+            else:
+                pred = np.argmax(a_pred[b].data.numpy())
+                actual = np.argmax(answers[b].data.numpy())
             if pred == actual:
                 acc += 1
         acc /= len(a_pred)
