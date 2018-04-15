@@ -11,6 +11,9 @@ from main_model_nn import MemN2NDialog
 from torch.autograd import Variable as Var
 from data_utils import load_candidates, load_dialog_task, vectorize_candidates
 
+dtype = torch.FloatTensor
+if torch.cuda.device_count() > 0:
+    dtype = torch.cuda.FloatTensor
 
 class chatBot(object):
     def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False,
