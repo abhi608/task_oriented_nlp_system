@@ -72,7 +72,7 @@ class chatBot(object):
 
         scheduler = None
         if self.decay:
-            scheduler = StepLR(optimizer, step_size=self.step, gamma=self.gamma)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=self.step, gamma=self.gamma)
             print("Decay learning rate initialized")
 
         for epoch in range(self.epochs):
