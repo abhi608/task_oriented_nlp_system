@@ -19,7 +19,7 @@ class chatBot(object):
     def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False,
                  memory_size=50, random_state=None, batch_size=32, learning_rate=0.001, epsilon=1e-8,
                  max_grad_norm=40.0, evaluation_interval=10, hops=3, epochs=200, embedding_size=20, save_model=10,
-                 checkpoint_path='./models'):
+                 checkpoint_path='./models', optim='adam', momentum=0.9, decay=0, gamma=0.1, step=30):
         self.data_dir = data_dir
         self.task_id = task_id
         self.model_dir = model_dir
@@ -37,6 +37,11 @@ class chatBot(object):
         self.embedding_size = embedding_size
         self.save_model = save_model
         self.checkpoint_path = checkpoint_path
+        self.optim = optim
+        self.momentum = momentum
+        self.decay = decay
+        self.gamma = gamma
+        self.step = step
 
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                                    train=0, batch_size=self.batch_size, nn=False)  # 0->train, 1->validate, 2->test
@@ -55,11 +60,25 @@ class chatBot(object):
                       range(self.batch_size, n_train, self.batch_size))
         batches = [(start, end) for start, end in batches]
 
-        criterion = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        if self.optim == 'sgd':
+            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.learning_rate, momentum=self.momentum)
+            print("SGD optimizer")
+        elif self.optim == 'rms':
+            optimizer = torch.optim.RMSprop(self.model.parameters(), lr=self.learning_rate, momentum=self.momentum)
+            print("RMSprop optimizer")
+        else:
+            optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+            print("Adam optimizer")
+
+        scheduler = None
+        if self.decay:
+            scheduler = StepLR(optimizer, step_size=self.step, gamma=self.gamma)
+            print("Decay learning rate initialized")
 
         for epoch in range(self.epochs):
             print('epoch :', epoch)
+            if self.decay:
+                scheduler.step()
             np.random.shuffle(batches)
             running_loss = 0.0
             for start, end in batches:
@@ -130,7 +149,8 @@ def main(params):
         os.makedirs(model_dir)
     chatbot = chatBot(data_dir=params['data_dir'], model_dir=model_dir, task_id=params['task_id'], isInteractive=params['interactive'], OOV=params['OOV'], memory_size=params['memory_size'], random_state=params['random_state'], batch_size=params['batch_size'],
                       learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'],
-                      save_model=params['save_model'], checkpoint_path=params['checkpoint_path'])
+                      save_model=params['save_model'], checkpoint_path=params['checkpoint_path'], optim=params['optim'], momentum=params['momentum'],
+                      decay=params['decay'], gamma=params['gamma'], step=params['step'])
     if params['train']:
         chatbot.train()
     else:
@@ -142,7 +162,7 @@ def main(params):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--learning_rate', default=0.001, type=float,
-                        help='Learning rate for Adam Optimizer')
+                        help='Learning rate for Optimizer')
     parser.add_argument('--epsilon', default=1e-8, type=float,
                         help='Epsilon value for Adam Optimizer')
     parser.add_argument('--max_grad_norm', default=40.0, type=float,
@@ -170,6 +190,16 @@ if __name__ == "__main__":
                         help='Save model after every x epochs')
     parser.add_argument('--checkpoint_path', default='./models',
                         help='Path to the directory to save models')
+    parser.add_argument('--optim', default='adam',
+                        help='Optimizer to be used')
+    parser.add_argument('--momentum', default=0.9, type=int,
+                        help='momentum for RMSprop/SGD')
+    parser.add_argument('--decay', default=0, type=int,
+                        help='1 for learning rate decay')
+    parser.add_argument('--gamma', default=0.1, type=float,
+                        help='factor for decay of learning rate')
+    parser.add_argument('--step', default=30, type=int,
+                        help='declearse learning rate by gamma after every x steps')    
 
     args = parser.parse_args()
     params = vars(args)  # convert to ordinary dict
