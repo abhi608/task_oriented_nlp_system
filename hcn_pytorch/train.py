@@ -31,7 +31,7 @@ class Trainer():
         action_size = at.action_size
         nb_hidden = 128
 
-        self.net = LSTM_wrapper(obs_size=obs_size,
+        self.net = LSTM_wrapper(optim='adam',obs_size=obs_size,
                        action_size=action_size,
                        nb_hidden=nb_hidden)
 

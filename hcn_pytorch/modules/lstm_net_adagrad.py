@@ -69,7 +69,7 @@ class LSTM_wrapper():
 
         self.model = LSTM(obs_size,nb_hidden,action_size)
         self.loss_function = nn.CrossEntropyLoss()
-        self.optimizer = T.optim.Adagrad(self.model.parameters(),lr=0.1)
+        self.optimizer = T.optim.Adagrad(self.model.parameters(),lr=0.01)
 
     # training
     def train_step(self, features, action, action_mask):

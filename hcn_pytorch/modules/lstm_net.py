@@ -4,7 +4,6 @@ import torch.autograd as autograd
 import numpy as np
 
 
-
 class LSTM(nn.Module):
 
     def __init__(self, obs_size, nb_hidden=128, action_size=16):
@@ -65,11 +64,14 @@ class LSTM(nn.Module):
 
 class LSTM_wrapper():
 
-    def __init__(self, obs_size, nb_hidden=128, action_size=16):
+    def __init__(self,optim, obs_size, nb_hidden=128, action_size=16):
 
         self.model = LSTM(obs_size,nb_hidden,action_size)
         self.loss_function = nn.CrossEntropyLoss()
-        self.optimizer = T.optim.Adam(self.model.parameters(),lr=0.01)
+        optim_dict = { 'adadelta':T.optim.Adadelta(self.model.parameters(),lr=0.1),
+                'adam':T.optim.Adam(self.model.parameters(),lr=0.001)
+                }
+        self.optimizer = optim_dict[optim]
 
     # training
     def train_step(self, features, action, action_mask):

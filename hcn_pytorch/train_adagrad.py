@@ -57,9 +57,9 @@ class Trainer():
             accuracy = self.evaluate()
             print(':: {}.dev accuracy {}\n'.format(j+1, accuracy))
 
-            if accuracy > 0.99:
-                self.net.save()
-                break
+            # if accuracy > 0.99:
+                # self.net.save()
+                # break
 
     def dialog_train(self, dialog):
         # create entity tracker
