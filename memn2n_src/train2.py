@@ -8,6 +8,7 @@ from main_model2 import MemN2NDialog, MemN2NDialog_2
 from data_utils2 import load_candidates, load_dialog_task, vectorize_candidates
 from matplotlib import pyplot as plt
 
+
 class chatBot(object):
     def __init__(self, data_dir, model_dir, task_id, isInteractive=True, OOV=False,
                  memory_size=50, random_state=None, batch_size=32, learning_rate=0.001, epsilon=1e-8,
@@ -51,7 +52,8 @@ class chatBot(object):
         batches = [(start, end) for start, end in batches]
         print("TRAIN START!")
         for epoch in range(self.epochs):
-            print('\nepoch :', epoch)
+            print('\n-----------------------------------')
+            print('epoch :', epoch)
             np.random.shuffle(batches)
             loss = 0.0
             for start, end in batches:
@@ -61,25 +63,29 @@ class chatBot(object):
                 loss += self.model.batch_train(s, q, a)
 
             self.losses.append(loss)
-            print('loss = ', loss / n_train)
+            print('loss : ', loss / n_train)
 
             if epoch % self.save_model == 0:
                 fname = 'scratch_models/task{0}_epoch{1}_weights.tar'.format(self.task_id, epoch)
                 self.model.save_weights(filename=fname)
+                train_acc = self.test(0, fname)
+                valid_acc = self.test(1, fname)
+                test_acc = self.test(2, fname)
+                print('Training acc : ', train_acc)
+                print('Validation acc : ', valid_acc)
+                print('Testing acc : ', test_acc)
+            print('-------------------------------------')
 
-    def test(self, data_type):
-        print("\nSTARTED TESTING")
+    def test(self, data_type, fname):
         dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
                         train=data_type, batch_size=self.batch_size)  # 0->train, 1->validate, 2->test
         testS, testQ, testA = dataset.getData()
         assert len(testS) == len(testQ) and len(testQ) == len(testA)
-        n_test = len(testS)
 
-        fname = 'scratch_models/task{0}_epoch{1}_weights.tar'.format(self.task_id)
         self.model.load_weights(filename=fname)
 
         acc, loss = self.model.test(testS, testQ, testA)
-        print('Accuracy = ', acc)
+        return acc
 
     def build_vocab(self, data, candidates):
         vocab = reduce(lambda x, y: x | y, (set(
@@ -112,7 +118,8 @@ def main(params):
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     chatbot = chatBot(data_dir=params['data_dir'], model_dir=model_dir, task_id=params['task_id'], isInteractive=params['interactive'], OOV=params['OOV'], memory_size=params['memory_size'], random_state=params['random_state'], batch_size=params['batch_size'],
-                      learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params['evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'],
+                      learning_rate=params['learning_rate'], epsilon=params['epsilon'], max_grad_norm=params['max_grad_norm'], evaluation_interval=params[
+                          'evaluation_interval'], hops=params['hops'], epochs=params['epochs'], embedding_size=params['embedding_size'],
                       save_model=params['save_model'], checkpoint_path=params['checkpoint_path'])
     if params['train']:
         chatbot.train()
@@ -121,7 +128,8 @@ def main(params):
         plt.x_label('Epochs')
         plt.y_label('Losses')
         plt.show()
-        plt.savefig('scratch_models/task{0}_epochs{1}_plot.png'.format(chatbot.task_id, chatbot.epochs))
+        plt.savefig(
+            'scratch_models/task{0}_epochs{1}_plot.png'.format(chatbot.task_id, chatbot.epochs))
     else:
         chatbot.test(0)
         chatbot.test(1)
@@ -156,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument('--OOV', default=0, type=int, help='if True, use OOV test set')
     parser.add_argument('--print_params', default=1, type=int,
                         help='pass False to turn off printing input parameters')
-    parser.add_argument('--save_model', default=5, type=int,
+    parser.add_argument('--save_model', default=1, type=int,
                         help='Save model after every x epochs')
     parser.add_argument('--checkpoint_path', default='./models',
                         help='Path to the directory to save models')
