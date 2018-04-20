@@ -27,11 +27,14 @@ class MemN2NDialog(object):
         self._candidates = candidates_vec
 
         # Weight matrices
+        nil_word_slot = torch.zeros([1, self._embedding_size])
         self.q_embed = torch.nn.Embedding(self._vocab_size, self._embedding_size)
-        # self.c_embed = torch.nn.Embedding(self._vocab_size, self._embedding_size)
+        self.q_embed.weight.data[0] = nil_word_slot
+        # self.c_embed = torch.nn.Embedding.from_pretrained(A)
         self.H = Var(torch.randn(self._embedding_size,
                                  self._embedding_size).type(dtype), requires_grad=True)
         self.out_embed = torch.nn.Embedding(self._vocab_size, self._embedding_size)
+        self.out_embed.weight.data[0] = nil_word_slot
 
         # Functions
         self.softmax = torch.nn.Softmax(dim=0)
@@ -147,11 +150,15 @@ class MemN2NDialog_2(MemN2NDialog):
         self._candidates = candidates_vec
 
         # Weight matrices
+        nil_word_slot = torch.zeros([1, self._embedding_size])
         self.q_embed = torch.nn.Embedding(self._vocab_size, self._embedding_size)
+        self.q_embed.weight.data[0] = nil_word_slot
         self.c_embed = []
         for _ in range(hops):
             self.C.append(torch.nn.Embedding(self._vocab_size, self._embedding_size))
+            self.C[-1].weight.data[0] = nil_word_slot
         self.out_embed = torch.nn.Embedding(self._vocab_size, self._embedding_size)
+        self.out_embed.weight.data[0] = nil_word_slot
 
         # Functions
         self.softmax = torch.nn.Softmax(dim=0)
