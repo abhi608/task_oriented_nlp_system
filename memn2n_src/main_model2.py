@@ -41,41 +41,49 @@ class MemN2NDialog(object):
         self.loss_fn = torch.nn.CrossEntropyLoss()
 
     def single_pass(self, stories, queries):
-        # Get Embeddings
-        q_emb = self.q_embed(queries)  # Get vocab embedding
-        u = torch.sum(q_emb, 1)      # Reduce sentence size
+        assert stories.shape[0] == queries.shape[0]
+        a_pred = []
 
-        # Pass through Memory Network
-        for _ in range(self._hops):
-            m_emb = self.q_embed(stories)  # memory vectors
-            m = torch.sum(m_emb, 2)        # Reduce sentence size
+        for b in range(queries.shape[0]):
+            query = queries[b]
+            story = stories[b]
 
-            # Calculate probabilities
-            p = self.softmax(m.bmm(u.view(self._batch_size, self._embedding_size, 1)))
+            # Get Embeddings
+            q_emb = self.q_embed(query)  # Get vocab embedding
+            u = torch.sum(q_emb, 0)      # Reduce sentence size
 
-            # # Uncomment when calculating separate answer embedding
-            # c_emb = self.c_embed(stories)  # possible outputs
-            # c = c_emb.sum(2)
+            # Pass through Memory Network
+            for _ in range(self._hops):
+                # Calculate story embeddings
+                m_emb = self.q_embed(story)  # memory vectors
+                m = torch.sum(m_emb, 1)    # Reduce sentence size
 
-            # Calculate possible output
-            p_temp = p.view(self._batch_size, 1, self._embedding_size)
-            o = p_temp.bmm(m).view(self._batch_size, self._embedding_size)
+                # Calculate probabilities
+                p = self.softmax(m.matmul(u.view(self._embedding_size, 1)))
 
-            # Update next input
-            u = self.u.matmul(self.H) + o
+                # # Uncomment when calculating separate answer embedding
+                # c_emb = self.c_embed(stories)  # possible outputs
+                # c = c_emb.sum(2)
 
-        # Get prediction
-        candidates_emb = self.out_embed(self._candidates)
-        candidates_emb = candidates_emb.sum(1)  # reducing sentence size
-        a_pred = u.matmul(candidates_emb.transpose())
+                # Calculate possible output
+                o = m.t().matmul(p)
+
+                # Update next input
+                u = self.u.matmul(self.H) + o
+
+            # Get prediction
+            candidates_emb = self.out_embed(self._candidates)
+            candidates_emb = candidates_emb.sum(1)  # reducing sentence size
+            a_pred.append(candidates_emb.matmul(u))
 
         return a_pred
 
     def batch_train(self, stories, queries, answers):
         a_pred = self.single_pass(stories, queries)
 
-        loss = self.loss_fn(a_pred, answers)
-        loss = loss.sum()
+        loss = 0.0
+        for b in range(queries.shape[0]):
+            loss = self.loss_fn(a_pred[b], answers[b])
 
         # Backprop and update weights
         loss.backward()
@@ -87,15 +95,16 @@ class MemN2NDialog(object):
         a_pred = self.single_pass(stories, queries)
         assert len(a_pred) == len(answers)
 
-        loss = self.loss_fn(a_pred, answers)
-        loss = loss.sum()
-
+        loss = 0.0
         acc = 0
         for b in range(len(a_pred)):
+            loss = self.loss_fn(a_pred[b], answers[b])
+
             pred = np.argmax(a_pred[b].data.numpy())
             actual = np.argmax(answers[b].data.numpy())
             if pred == actual:
                 acc += 1
+
         acc /= len(a_pred)
 
         return acc, loss
@@ -165,32 +174,38 @@ class MemN2NDialog_2(MemN2NDialog):
         self.loss_fn = torch.nn.CrossEntropyLoss()
 
     def single_pass(self, stories, queries):
-        # Get Embeddings
-        u = self.q_embed(queries)  # Get vocab embedding
-        u = torch.sum(u, 1)        # Reduce sentence size
-        m = self.q_embed(stories)  # Get memory vectors
-        m = torch.sum(m, 2)        # Reduce sentence size
+        assert stories.shape[0] == queries.shape[0]
+        a_pred = []
 
-        # Pass through Memory Network
-        for hop in range(self._hops):
-            c = self.C[hop](stories)  # possible outputs
-            c = torch.sum(c, 2)
+        for b in range(queries.shape[0]):
+            story = stories[b]
+            query = queries[b]
 
-            # Calculate probabilities
-            p = self.softmax(m.bmm(u.view(self._batch_size, self._embedding_size, 1)))
+            # Get Embeddings
+            u = self.q_embed(query)  # Get vocab embedding
+            u = torch.sum(u, 0)        # Reduce sentence size
+            m = self.q_embed(story)  # Get memory vectors
+            m = torch.sum(m, 1)        # Reduce sentence size
 
-            # Calculate possible output
-            p_temp = p.view(self._batch_size, 1, self._embedding_size)
-            o = p_temp.bmm(c).view(self._batch_size, self._embedding_size)
+            # Pass through Memory Network
+            for hop in range(self._hops):
+                c = self.C[hop](story)  # possible outputs
+                c = torch.sum(c, 1)
 
-            # Update next input
-            u = u + o
-            m = c
+                # Calculate probabilities
+                p = self.softmax(m.matmul(u.view(self._embedding_size, 1)))
 
-        # Get prediction
-        candidates_emb = self.out_embed(self._candidates)
-        candidates_emb = candidates_emb.sum(1)  # reducing sentence size
-        a_pred = u.matmul(candidates_emb.transpose())
+                # Calculate possible output
+                o = m.t().matmul(p)
+
+                # Update next input
+                u = u + o
+                m = c
+
+            # Get prediction
+            candidates_emb = self.out_embed(self._candidates)
+            candidates_emb = candidates_emb.sum(1)  # reducing sentence size
+            a_pred.append(candidates_emb.matmul(u))
 
         return a_pred
 

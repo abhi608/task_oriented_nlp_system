@@ -8,9 +8,11 @@ from torch.autograd import Variable as Var
 
 stop_words = set(["a", "an", "the"])
 
-dtype = torch.FloatTensor
+fdtype = torch.FloatTensor
+ldtype = torch.LongTensor
 if torch.cuda.device_count() > 0:
-    dtype = torch.cuda.FloatTensor
+    fdtype = torch.cuda.FloatTensor
+    ldtype = torch.cuda.LongTensor
 
 def load_candidates(data_dir, task_id):
     assert task_id > 0 and task_id < 7
@@ -121,7 +123,7 @@ def vectorize_candidates(candidates, word_idx, sentence_size):
     for i, candidate in enumerate(candidates):
         lc = max(0, sentence_size - len(candidate))
         C.append([word_idx[w] if w in word_idx else 0 for w in candidate] + [0] * lc)
-    return dtype(C)
+    return fdtype(C)
 
 
 def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, max_memory_size, nn=False, max_story_size=1):
@@ -178,8 +180,8 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         # break
     # print("rrrrrrrrrrrrrr: ", np.array(S).shape)
     if nn:
-        return S, Q, Var(dtype(A))
+        return S, Q, Var(fdtype(A))
     else:
         # S_new = len(A)
-        print("S_new: ", Var(dtype(S)).shape)
-        return Var(dtype(S)), Var(torch.LongTensor(Q)), Var(dtype(A))
+        print("S_new: ", Var(fdtype(S)).shape)
+        return Var(ldtype(S)), Var(ldtype(Q)), Var(ldtype(A))
