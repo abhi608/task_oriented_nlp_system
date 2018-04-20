@@ -74,7 +74,7 @@ class CDATA(object):
             map(len, chain.from_iterable(s for s, _, _ in data)))
         self.candidate_sentence_size = max(map(len, candidates))
         query_size = max(map(len, (q for _, q, _ in data)))
-        self.memory_size = min(self.memory_size, max_story_size)
+        self.memory_size = min(self.memory_size, self.max_story_size)
         self.vocab_size = len(self.word_idx) + 1  # +1 for nil word
         self.sentence_size = max(
             query_size, self.sentence_size)  # for the position

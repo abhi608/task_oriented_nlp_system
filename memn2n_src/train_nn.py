@@ -186,7 +186,7 @@ if __name__ == "__main__":
     parser.add_argument('--OOV', default=0, type=int, help='if True, use OOV test set')
     parser.add_argument('--print_params', default=1, type=int,
                         help='pass False to turn off printing input parameters')
-    parser.add_argument('--save_model', default=5, type=int,
+    parser.add_argument('--save_model', default=1, type=int,
                         help='Save model after every x epochs')
     parser.add_argument('--checkpoint_path', default='./models',
                         help='Path to the directory to save models')
