@@ -68,7 +68,7 @@ class CDATA(object):
                                              for candidate in candidates))
         vocab = sorted(vocab)
         self.word_idx = dict((c, i + 1) for i, c in enumerate(vocab))
-        max_story_size = max(map(len, (s for s, _, _ in data)))
+        self.max_story_size = max(map(len, (s for s, _, _ in data)))
         mean_story_size = int(np.mean([len(s) for s, _, _ in data]))
         self.sentence_size = max(
             map(len, chain.from_iterable(s for s, _, _ in data)))
@@ -83,5 +83,5 @@ class CDATA(object):
         print("Longest sentence length", self.sentence_size)
         print("Longest candidate sentence length",
               self.candidate_sentence_size)
-        print("Longest story length", max_story_size)
+        print("Longest story length", self.max_story_size)
         print("Average story length", mean_story_size)

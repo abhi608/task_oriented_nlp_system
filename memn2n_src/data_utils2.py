@@ -123,7 +123,7 @@ def vectorize_candidates(candidates, word_idx, sentence_size):
     return dtype(C)
 
 
-def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, max_memory_size, nn=False):
+def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, max_memory_size, nn=False, max_story_size=1):
     """
     Vectorize stories and queries.
 
@@ -156,7 +156,17 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
 
         lq = max(0, sentence_size - len(query))
         q = [word_idx[w] if w in word_idx else 0 for w in query] + [0] * lq
-        S.append(Var(dtype(ss)))
+
+        #---------------------------------------------
+        # print("len_ss: ", len(ss[0]))
+        assert len(ss) <= max_story_size
+        tmp_len = max_story_size - len(ss)
+        sent_len = len(ss[0])
+        for _ in range(tmp_len):
+            ss.append([0] * sent_len)
+        # print("len_ss: ", len(ss[13]))
+        #---------------------------------------------
+        S.append(ss)
         Q.append(q)
         answer_to_send = [0] * candidates_size
         answer_to_send[answer] = 1
@@ -167,4 +177,4 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
     if nn:
         return S, Q, Var(dtype(A))
     else:
-        return S, Var(dtype(Q)), Var(dtype(A))
+        return Var(dtype(S)), Var(dtype(Q)), Var(dtype(A))

@@ -3,9 +3,9 @@ import os
 import json
 import argparse
 import numpy as np
-from DataLoader import CDATA
+from DataLoader2 import CDATA
 from main_model2 import MemN2NDialog, MemN2NDialog_2
-from data_utils import load_candidates, load_dialog_task, vectorize_candidates
+from data_utils2 import load_candidates, load_dialog_task, vectorize_candidates
 from matplotlib import pyplot as plt
 
 class chatBot(object):
@@ -34,7 +34,7 @@ class chatBot(object):
         self.losses = []
 
         self.train_dataset = CDATA(data_dir=self.data_dir, task_id=self.task_id, memory_size=self.memory_size,
-                                   train=0, batch_size=self.batch_size, story_size=self.max_story_size)  # 0->train, 1->validate, 2->test
+                                   train=0, batch_size=self.batch_size, nn=False)  # 0->train, 1->validate, 2->test
         self.model = MemN2NDialog(batch_size=self.batch_size, vocab_size=self.train_dataset.getParam('vocab_size'),
                                   candidate_size=self.train_dataset.getParam('candidate_sentence_size'), sentence_size=self.train_dataset.getParam('sentence_size'),
                                   candidates_vec=self.train_dataset.getParam('candidates_vec'), embedding_size=self.embedding_size, hops=self.hops,
