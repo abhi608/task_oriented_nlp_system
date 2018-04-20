@@ -70,10 +70,10 @@ class chatBot(object):
                 self.model.save_weights(filename=fname)
                 train_acc = self.test(0, fname)
                 valid_acc = self.test(1, fname)
-                test_acc = self.test(2, fname)
+                # test_acc = self.test(2, fname)
                 print('Training acc : ', train_acc)
                 print('Validation acc : ', valid_acc)
-                print('Testing acc : ', test_acc)
+                # print('Testing acc : ', test_acc)
             print('-------------------------------------')
 
     def test(self, data_type, fname):
