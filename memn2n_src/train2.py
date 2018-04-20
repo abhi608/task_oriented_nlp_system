@@ -49,7 +49,7 @@ class chatBot(object):
         batches = zip(range(0, n_train - self.batch_size, self.batch_size),
                       range(self.batch_size, n_train, self.batch_size))
         batches = [(start, end) for start, end in batches]
-
+        print("TRAIN START!")
         for epoch in range(self.epochs):
             print('\nepoch :', epoch)
             np.random.shuffle(batches)

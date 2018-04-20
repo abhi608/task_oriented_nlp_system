@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import os
 import re
 import torch
+import numpy as np
 from torch.autograd import Variable as Var
 
 stop_words = set(["a", "an", "the"])
@@ -163,7 +164,7 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         tmp_len = max_story_size - len(ss)
         sent_len = len(ss[0])
         for _ in range(tmp_len):
-            ss.append([0] * sent_len)
+            ss.insert(0, [0] * sent_len)
         # print("len_ss: ", len(ss[13]))
         #---------------------------------------------
         S.append(ss)
@@ -173,8 +174,12 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         if nn:
             A.append(answer_to_send)
         else:
-            A.append(Var(dtype(answer_to_send)))
+            A.append(answer_to_send)
+        # break
+    # print("rrrrrrrrrrrrrr: ", np.array(S).shape)
     if nn:
         return S, Q, Var(dtype(A))
     else:
-        return Var(dtype(S)), Var(dtype(Q)), Var(dtype(A))
+        # S_new = len(A)
+        print("S_new: ", Var(dtype(S)).shape)
+        return Var(dtype(S)), Var(torch.LongTensor(Q)), Var(dtype(A))
