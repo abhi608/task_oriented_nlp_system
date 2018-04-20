@@ -1,2 +1,3 @@
 *.pyc
-./scratch_models
+./memn2n_src/scratch_models
+*.tar
