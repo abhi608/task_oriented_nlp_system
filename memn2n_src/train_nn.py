@@ -96,6 +96,9 @@ class chatBot(object):
                     os.makedirs(self.checkpoint_path)
                 model_name = os.path.join(self.checkpoint_path, str(self.task_id) + '.pkl')
                 torch.save(self.model.state_dict(), model_name)
+                self.test(0)
+                self.test(1)
+                self.test(2)
             #------------------------------------------------------------------------------------------
 
 
