@@ -50,8 +50,9 @@ class MemN2NDialog(object):
 
             # Get Embeddings
             q_emb = self.q_embed(query)  # Get vocab embedding
+            # print("Shape of q_em: ", q_emb.shape)
             u = torch.sum(q_emb, 0)      # Reduce sentence size
-
+            # print("u_new: ", u.shape)
             # Pass through Memory Network
             for _ in range(self._hops):
                 # Calculate story embeddings
@@ -59,6 +60,7 @@ class MemN2NDialog(object):
                 m = torch.sum(m_emb, 1)    # Reduce sentence size
 
                 # Calculate probabilities
+                # print("Shape of U: ", u.shape)
                 p = self.softmax(m.matmul(u.view(self._embedding_size, 1)))
 
                 # # Uncomment when calculating separate answer embedding
@@ -67,14 +69,16 @@ class MemN2NDialog(object):
 
                 # Calculate possible output
                 o = m.t().matmul(p)
+                # print("Shape of O: ", o.shape)
 
                 # Update next input
-                u = self.u.matmul(self.H) + o
+                u = self.H.matmul(u.view(self._embedding_size, 1)) + o
 
             # Get prediction
             candidates_emb = self.out_embed(self._candidates)
             candidates_emb = candidates_emb.sum(1)  # reducing sentence size
-            a_pred.append(candidates_emb.matmul(u))
+            # print "hell: ", torch.nn.functional.normalize(candidates_emb.matmul(u).view(-1), dim=0)
+            a_pred.append(self.softmax(torch.nn.functional.normalize(candidates_emb.matmul(u), dim=0)))
 
         return a_pred
 
@@ -83,7 +87,9 @@ class MemN2NDialog(object):
 
         loss = 0.0
         for b in range(queries.shape[0]):
-            loss = self.loss_fn(a_pred[b], answers[b])
+            # print(a_pred[b], answers[b])
+            loss += self.loss_fn(a_pred[b].t(), answers[b])
+            # print("LOSS: ", loss)
 
         # Backprop and update weights
         loss.backward()
@@ -98,7 +104,7 @@ class MemN2NDialog(object):
         loss = 0.0
         acc = 0
         for b in range(len(a_pred)):
-            loss = self.loss_fn(a_pred[b], answers[b])
+            loss += self.loss_fn(a_pred[b], answers[b])
 
             pred = np.argmax(a_pred[b].data.numpy())
             actual = np.argmax(answers[b].data.numpy())

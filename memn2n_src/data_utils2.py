@@ -123,7 +123,7 @@ def vectorize_candidates(candidates, word_idx, sentence_size):
     for i, candidate in enumerate(candidates):
         lc = max(0, sentence_size - len(candidate))
         C.append([word_idx[w] if w in word_idx else 0 for w in candidate] + [0] * lc)
-    return fdtype(C)
+    return Var(ldtype(C))
 
 
 def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, max_memory_size, nn=False, max_story_size=1):
@@ -176,7 +176,7 @@ def vectorize_data(data, word_idx, sentence_size, batch_size, candidates_size, m
         if nn:
             A.append(answer_to_send)
         else:
-            A.append(answer_to_send)
+            A.append(answer)
         # break
     # print("rrrrrrrrrrrrrr: ", np.array(S).shape)
     if nn:

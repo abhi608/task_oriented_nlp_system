@@ -131,7 +131,7 @@ def main(params):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--learning_rate', default=0.001, type=float,
+    parser.add_argument('--learning_rate', default=0.01, type=float,
                         help='Learning rate for Adam Optimizer')
     parser.add_argument('--epsilon', default=1e-8, type=float,
                         help='Epsilon value for Adam Optimizer')
